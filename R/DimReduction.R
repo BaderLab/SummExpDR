@@ -4,28 +4,36 @@
 
 #' Dimensionality Reduction Container
 #'
-#' inherits from SummarizedExperiment
-#' @inherit SummarizedExperiment
-#' @slot SummExpDR_assay assay used to create Dimensionality Reduction object.
+#' inherits from SummarizedExperiment. assay data = dimensionality reduction
+#' coordinates, rows correspond to PCs, cols correspond to samples
+#' @inherit SummarizedExperiment::SummarizedExperiment
+#' @slot sourceAssay assay used to create Dimensionality Reduction object.
 #' This comes in handy for varimax rotation, where knowledge of which assay
 #' used for PCA is necessary to recompute reduced dims.
-setClass('DR', contains = 'SummarizedExperiment')
+#' @export
+setClass('DR', contains = 'SummarizedExperiment', representation(sourceAssay = 'character_OR_NULL'))
 
 create_DR <- function(assays, ...) {
   summ_exp <- SummarizedExperiment::SummarizedExperiment(assays, ...)
   DR <- new('DR', colData = summ_exp@colData,
             assays = summ_exp@assays,
             NAMES = summ_exp@NAMES,
-            elementMetadata = summ_exp@elementMetaData,
+            elementMetadata = summ_exp@elementMetadata,
             metadata = summ_exp@metadata,
-            SummExpDR_assay = NULL)
+            sourceAssay = NULL)
   return(DR)
 }
 
-setMethod('setSummExpDR_assay',
+#' Set assay assay used to generate dim reduction in SummExpDR object
+#' @export
+
+setGeneric('setSourceAssay', function(x, assay_name) standardGeneric('setSourceAssay'))
+
+setMethod('setSourceAssay',
           c('DR'),
           function(x, assay_name) {
-            DR@SummExpDR_assay <- assay_name
+            DR <- x
+            DR@sourceAssay <- assay_name
             return(DR)
           })
 
@@ -36,33 +44,44 @@ setMethod('setSummExpDR_assay',
 #' @param rows = rows to subset (integer or logical indices or character vector)
 #' @param cols = cols to subset (integer or logical indices or character vector)
 #' @value embeddings matrix
+#' @export
 
-setGeneric('getEmbeddings',  function(x, rows, cols) standardGeneric("getLoadings"))
+setGeneric('getEmbeddings',  function(x, key = NULL, rows = NULL, cols = NULL) standardGeneric("getEmbeddings"))
 
 setMethod('getEmbeddings',
           'DR',
-          function(x, rows, cols) {
+          function(x, key = NULL, rows = NULL, cols = NULL) {
+            if (is.null(rows)) {
+              rows <- 1:nrow(x)
+            }
+            if (is.null(cols)) {
+              cols <- 1:ncol(x)
+            }
             return(SummarizedExperiment::assay(x, 1)[rows, cols])
           })
 
 setMethod('getEmbeddings',
           'SummExpDR',
-          function(x, key, rows, cols) {
+          function(x, key, rows = NULL, cols = NULL) {
             DR <- getReducedDims(x, key)
-            return(getEmbeddings(DR, rows, cols))
+            return(getEmbeddings(DR, rows = rows, cols = cols))
           })
 
 #' DR object for Linear Dimensionality Reduction
-
+#' @export
 setClass('LinearDR', contains = 'DR')
+
+#' Create LinearDR object
+#'@export
 
 create_LinearDR <- function(assays, ...) {
   DR <- create_DR(assays, ...)
   LinearDR <- new('LinearDR', colData = DR@colData,
             assays = DR@assays,
             NAMES = DR@NAMES,
-            elementMetadata = DR@elementMetaData,
-            metadata = DR@metadata)
+            elementMetadata = DR@elementMetadata,
+            metadata = DR@metadata,
+            sourceAssay = NULL)
   return(LinearDR)
 }
 
@@ -73,45 +92,75 @@ create_LinearDR <- function(assays, ...) {
 #' @param features names of features to use (e.g. gene names), or NULL for all features. If not null should ideally be character
 #' @param key key for dimensionality reduction
 #' @value Loadings matrix for linear dimensionality reduction
+#' @export
 
-setGeneric('getLoadings',  function(x) standardGeneric("getLoadings"))
+setGeneric('getLoadings',  function(x, key = NULL, red_dims = NULL, features = NULL) standardGeneric("getLoadings"))
 
 setMethod('getLoadings',
           'LinearDR',
-          function(x, red_dims = NULL, features = NULL) {
-            col_data <- SummarizedExperiment::colData(x)
+          function(x, key = NULL, red_dims = NULL, features = NULL) {
+            row_data <- SummarizedExperiment::rowData(x)
             # relying on object to not have features with _loading in names of features
             # used for dimensionality reduction
             col_regex <- '_loading$'
-            loading_cols <- colnames(col_data)[grep(col_regex, colnames(col_data))]
+            loading_cols <- colnames(row_data)[grep(col_regex, colnames(row_data))]
             if (is.null(red_dims)) {
-              red_dims <- rownames(col_data)
+              red_dims <- 1:nrow(row_data)
             }
-            loading_mat <- as.matrix(col_data[red_dims, loading_cols])
-            colnames(loading_mat) <- sub(col_regex, '', colnames(loading_mat))
+            loadings_mat <- as.matrix(row_data[red_dims, loading_cols])
+            colnames(loadings_mat) <- sub(col_regex, '', colnames(loadings_mat))
             if (!is.null(features)) {
-              loading_mat <- loading_mat[,features]
+              loadings_mat <- loadings_mat[,features]
             }
-            return(loading_mat)
+            return(loadings_mat)
           })
 
 setMethod('getLoadings',
           'SummExpDR',
           function(x, key, red_dims = NULL, features = NULL) {
             LinearDR <- getReducedDims(x, key)
-            loading_mat <- getLoadings(LinearDR, red_dims, features)
-            return(loading_mat)
+            key <- NULL
+            loadings_mat <- getLoadings(LinearDR, red_dims = red_dims, features = features)
+            return(loadings_mat)
           })
 
 .LinearDR_validity <- function(x) {
-  col_data <- SummarizedExperiment::colData(x)
-  all_colnames <- colnames(col_data)
+  row_data <- SummarizedExperiment::rowData(x)
+  all_colnames <- colnames(row_data)
   loading_regex <- '_loading$'
-  var_expl_regex <- '^VarExplained$'
-  stopifnot(sum(c(grepl(loading_regex), grepl(var_expl_regex))) == ncol(col_data))
+  stopifnot(sum(grepl(loading_regex, all_colnames)) == ncol(row_data))
 }
 
 setValidity('LinearDR', .LinearDR_validity)
+
+#' class for linear dimensionality reduction that
+#' can have data reconstructed from factors
+#' @export
+setClass('FactorizedDR', contains = 'LinearDR')
+
+create_FactorizedDR <- function(assays, ...) {
+  LinearDR <- create_LinearDR(assays, ...)
+  FactorizedDR <- new('FactorizedDR', colData = LinearDR@colData,
+                  assays = LinearDR@assays,
+                  NAMES = LinearDR@NAMES,
+                  elementMetadata = LinearDR@elementMetadata,
+                  metadata = LinearDR@metadata,
+                  sourceAssay = NULL)
+  return(FactorizedDR)
+}
+
+#' #' method for calculating reconstruction accuracy
+#' #'
+#'
+#' setGeneric('qualityMetric',  function(x, key, dims_use) standardGeneric("qualityMetric"))
+#'
+#' setMethod('qualityMetric',
+#'           signature = 'SummExpDR',
+#'           function(x, key, dims_use) {
+#'             FactorizedDR <- getReducedDims(x, key)
+#'             assay_used <- FactorizedDR@sourceAssay
+#'             input_data_SE <- getSummExp()
+#'           })
 
 # Methods for Running Dimensionality Reduction --------------------------------
 
@@ -121,45 +170,68 @@ setValidity('LinearDR', .LinearDR_validity)
 #' matrix must have the form n features x m samples
 #' @param i = assay to pull
 #' @param suffix suffix to add, if SummExpDR. By default it's just \'PCA\'
+#' @param std_norm whether to standard normalize data
 #' @value SummExpDR updated with LinearDR object or LinearDR object otherwise
-#'
+#' @export
 
-setGeneric('runPCA',  function(x, i, suffix) standardGeneric("runPCA"))
+setGeneric('runPCA',  function(x, i = NULL, suffix = NULL, std_norm = TRUE) standardGeneric("runPCA"))
 
 setMethod('runPCA',
           'matrix',
-          function(x, i = NULL, suffix = NULL) {
+          function(x, i = NULL, suffix = NULL, std_norm = TRUE) {
             # i and suffix are just placeholders
             data_mat <- t(x)
-            pca_res <- prcomp(data_mat, center = TRUE, scale. = TRUE)
+            if (std_norm) {
+              data_mat <- scale(data_mat, center = TRUE, scale = TRUE)
+            }
+            # tryCatch({
+            #   stopifnot(all(Matrix::colMeans(x) == 0))
+            #   stopifnot(all(matrixStats::colVars(x) == 1))
+            # }, error = function(e) {
+            #   stop('features not standard normalized')
+            # })
+            pca_res <- prcomp(data_mat, center = FALSE, scale. = FALSE)
             pca_coords <- pca_res$x
-            loading_mat <- pca_res$rotation
-            rownames(loading_mat) <- paste0(rownames(loadings_mat), '_loading')
-            pca_var <- (pca_res$sdev)^2
+            loadings_mat <- pca_res$rotation
+            rownames(loadings_mat) <- paste0(rownames(loadings_mat), '_loading')
+            # pca_var <- (pca_res$sdev)^2
             key <- paste0('pca', suffix)
             SampleID <- rownames(pca_coords)
             col_data <- S4Vectors::DataFrame(SampleID = SampleID, row.names = SampleID)
-            row_data <- S4Vectors::DataFrame(t(loading_mat))
-            row_data$VarExplained <- pca_var/sum(pca_var)
-            pca_summ_exp <- create_LinearDR(assays = list(pca_coords), rowData = row_data, colData = col_data)
+            row_data <- S4Vectors::DataFrame(t(loadings_mat))
+            # row_data$VarExplained <- pca_var/sum(pca_var)
+            # recall that SummarizedExperiment objects have feats in rows and samples in cols
+            pca_summ_exp <- create_FactorizedDR(assays = list(pca = t(pca_coords)), rowData = row_data, colData = col_data)
             return(pca_summ_exp)
           })
 
 setMethod('runPCA',
           c('SummarizedExperiment'),
-          function(x, i, suffix = NULL) {
-            pca_summ_exp <- runPCA(SummarizedExperiment::assay(x, i))
+          function(x, i, suffix = NULL, std_norm = TRUE) {
+            if (is.numeric(i)) {
+              assay_name <- SummarizedExperiment::assays(x)[i]
+            } else {
+              assay_name <- i
+            }
+            if (std_norm) {
+              new_assay_name <- paste0(assay_name, '_std_norm')
+              SummarizedExperiment::assay(x, new_assay_name) <- t(scale(t(SummarizedExperiment::assay(x, assay_name))))
+              assay_use <- new_assay_name
+            } else {
+              assay_use <- assay_name
+            }
+            pca_summ_exp <- runPCA(SummarizedExperiment::assay(x, assay_use), std_norm = FALSE)
             # record assay used
-            setSummExpDR_assay(pca_summ_exp, i)
+            setSourceAssay(pca_summ_exp, assay_use)
             return(pca_summ_exp)
           })
 
 setMethod('runPCA',
           c('SummExpDR'),
-          function(x, i, suffix) {
-            pca_summ_exp <- runPCA(getSummExp(x), i)
+          function(x, i, suffix, std_norm = TRUE) {
+            pca_summ_exp <- runPCA(getSummExp(x), i, suffix, std_norm)
             key = paste0('PCA', suffix)
-            setReducedDims(x, key = key, value = pca_summ_exp)
+            x <- setReducedDims(x, key = key, value = pca_summ_exp)
             return(x)
           })
 
@@ -169,8 +241,9 @@ setMethod('runPCA',
 #' @param key key for LinearDR in ReducedDims to access
 #' @param dims_use dims to use (character or integer/logical index, character preferred)
 #' @param ... other args to pass to stats::varimax
+#' @export
 
-setGeneric('runVarimax', function(x, key, dims_use = NULL, ...) standardGeneric('runVarimax'))
+setGeneric('runVarimax', function(x, key, dims_use = NULL, suffix = '', ...) standardGeneric('runVarimax'))
 
 setMethod('runVarimax',
           'SummExpDR',
@@ -183,7 +256,7 @@ setMethod('runVarimax',
             vmax_loadings <- vmax_res$loadings[,]
             colnames(vmax_loadings) <- paste0('VM', 1:ncol(vmax_loadings))
             # compute new coords
-            assay_used <- LinearDR@SummExpDR_assay
+            assay_used <- LinearDR@sourceAssay
             tryCatch(stopifnot(is.character(assay_used)), {
               stop('assay not specified for Linear DR selected')
             })
@@ -194,19 +267,17 @@ setMethod('runVarimax',
             })
             # coords are in m samples x p features format
             # vmax loadings in p features x n embedding dims format
+            # we transpose these in constructing new LinearDR (SummarizedExperiment) object
             data_coords <- t(SummarizedExperiment::assay(summ_exp, assay_used))
             new_coords <- data_coords %*% vmax_loadings
-            var_expl <- numeric(ncol(vmax_loadings))
-            names(var_expl) <- colnames(vmax_loadings)
-            mean_mat <- matrix(rep(colMeans(data_coords), nrow(data_coords)), nrow = nrow(data_coords), byrow = TRUE)
-            total_error <- sum(new_)
-            # for (v_name in names(var_expl)) {
-            #   reconstr_data <- new_coords[,v_name, drop = FALSE] %*% t(vmax_loadings[,v_name, drop = FALSE])
-            #   diff <- reconstr_data - data_coords
-            #   sq_error <- sum(diag(diff %*% t(diff))^2)
-            # }
-            # reconstr_data <- new_coords[,2:3, drop = FALSE] %*% t(vmax_loadings[,2:3])
-            # diff <- reconstr_data - data_coords
-            # sq_error <- sum(diag(diff %*% t(diff))^2)
-
+            rownames(new_coords) <- rownames(data_coords)
+            row_data = S4Vectors::DataFrame(as.data.frame(t(loadings)))
+            SampleID <- rownames(new_coords)
+            col_data <- S4Vectors::DataFrame(SampleID = SampleID, row.names = SampleID)
+            VmaxDR <- create_LinearDR(assays = list(varimax = t(new_coords)),
+                                      rowData = row_data,
+                                      colData = col_data)
+            vmax_key <- paste0('varimax', suffix)
+            x <- setReducedDims(x, key = vmax_key, value = VmaxDR)
+            return(x)
           })

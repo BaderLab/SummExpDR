@@ -9,23 +9,29 @@
 #' if dimensionality reduction is rerun.
 #'
 #' @slot summ_exp SummarizedExperiment
-#' @slot ReducedDims list of SummarizedExperiment objects, containing sample names (colData)
+#' @slot reducedDims list of SummarizedExperiment objects, containing sample names (colData)
+#' @export
 #' and reduced dim metadata (e.g. loadings, variance explained)
 
-setClass('SummExpDR', representation = c('summ_exp' = 'SummarizedExperiment',
-                                         'ReducedDims' = 'list'))
+setClass('SummExpDR', representation = list('summ_exp' = 'SummarizedExperiment',
+                                            'reducedDims' = 'list'))
 
 # Create Object ---------------------------------------------------------------
 
 create_SummExpDR <- function(summ_exp) {
   # initialize as object with SummarizedExperiment and empty list
-  # for ReducedDims.
+  # for reducedDims.
   obj <- new('SummExpDR',
              summ_exp = summ_exp,
-             ReducedDims = list())
+             reducedDims = list())
 }
 
 # Getters + Setters -----------------------------------------------------------
+
+#' get summarized experiment object from SummExpDR
+#' @export
+
+setGeneric('getSummExp', function(x) standardGeneric('getSummExp'))
 
 setMethod('getSummExp',
           'SummExpDR',
@@ -33,11 +39,21 @@ setMethod('getSummExp',
             return(x@summ_exp)
           })
 
+#' get keys for dim reductions
+#' @export
+
+setGeneric('getReducedDims_keys', function(x) standardGeneric('getReducedDims_keys'))
+
 setMethod('getReducedDims_keys',
           'SummExpDR',
           function(x) {
             return(names(x@reducedDims))
           })
+
+#' get reduced dims indicated by key
+#' @export
+
+setGeneric('getReducedDims', function(x, key) standardGeneric('getReducedDims'))
 
 setMethod('getReducedDims',
           'SummExpDR',
@@ -49,27 +65,32 @@ setMethod('getReducedDims',
               if (!key %in% valid_keys) {
                 stop(paste('provided key not in keys', paste(valid_keys, collapse = ',')))
               }
-              return(x@ReducedDims[[key]])
+              return(x@reducedDims[[key]])
             }
           })
-#' Setter for ReducedDims slot
+#' Setter for reducedDims slot
 #' @param x SummExpDR
 #' @param key character vector of length 1
 #' @param value
+#' @export
+
+setGeneric('setReducedDims', function(x, key, value) standardGeneric('setReducedDims'))
+
 setMethod('setReducedDims',
           'SummExpDR',
           function(x, key, value) {
-            x@ReducedDims[[key]] <- value
+            x@reducedDims[[key]] <- value
+            return(x)
           })
 
 # Check Validity --------------------------------------------------------------
 
 .validSummExpDR <- function(x) {
   stopifnot(is(x@summ_exp, 'SummarizedExperiment'))
-  stopifnot(is.list(x@ReducedDims))
-  if (length(x@ReducedDims) > 0) {
-    for (i in 1:length(x@ReducedDims)) {
-      stopifnot(is(x@ReducedDims[[i]], 'SummarizedExperiment'))
+  stopifnot(is.list(x@reducedDims))
+  if (length(x@reducedDims) > 0) {
+    for (i in 1:length(x@reducedDims)) {
+      stopifnot(is(x@reducedDims[[i]], 'SummarizedExperiment'))
     }
   }
 }

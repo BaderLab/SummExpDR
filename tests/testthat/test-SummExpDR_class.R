@@ -11,13 +11,13 @@ row_data <- S4Vectors::DataFrame(data.frame(texture = c('soft', 'medium', 'rough
                                             stringsAsFactors = FALSE))
 
 testthat::test_that('class created correctly', {
-  se <- SummarizedExperiment(assays = list(assay1 = data_mat), rowData = row_data, colData = col_data)
+  se <- SummarizedExperiment::SummarizedExperiment(assays = list(assay1 = data_mat), rowData = row_data, colData = col_data)
   SEDR <- create_SummExpDR(se)
   testthat::expect_error(create_SummExpDR(data_mat))
 })
 
 
-data_mat2 <- matrix(rnorm(2000), nrow = 10)
+data_mat2 <- t(matrix(rnorm(2000), nrow = 100, ncol = 20))
 rownames(data_mat2) <- paste0('feat', 1:nrow(data_mat2))
 colnames(data_mat2) <- paste0('sample', 1:ncol(data_mat2))
 col_data2 <- S4Vectors::DataFrame(data.frame(color = sample(c('red', 'blue', 'green'),
@@ -29,17 +29,24 @@ col_data2 <- S4Vectors::DataFrame(data.frame(color = sample(c('red', 'blue', 'gr
                                              row.names = colnames(data_mat2),
                                              stringsAsFactors = FALSE))
 row_data2 <- S4Vectors::DataFrame(data.frame(texture = sample(c('soft', 'medium', 'rough'),
-                                                              size = ncol(data_mat2),
+                                                              size = nrow(data_mat2),
                                                               replace = TRUE),
                                              id = sample(7:9,
-                                                         size = ncol(data_mat2),
+                                                         size = nrow(data_mat2),
                                                          replace = TRUE),
-                                             row.names = colnames(data_mat2),
+                                             row.names = rownames(data_mat2),
                                              stringsAsFactors = FALSE))
 
 testthat::test_that('runPCA works', {
-  se2 <- SummarizedExperiment(assays = list(assay1 = data_mat2), rowData = row_data2, colData = col_data2)
+  se2 <- SummarizedExperiment::SummarizedExperiment(assays = list(assay1 = data_mat2), rowData = row_data2, colData = col_data2)
   SEDR2 <- create_SummExpDR(se2)
-  SEDR2 <- runPCA(SEDR2, 1, '_assay1')
-  loadings_mat <- getLoadings(SEDR2)
+  SEDR2 <- runPCA(SEDR2, 'assay1', '_assay1')
+  reduced_dims <- getReducedDims(SEDR2, key = 'PCA_assay1')
+  loadings_mat <- getLoadings(reduced_dims)
+  coords_mat <- getEmbeddings(reduced_dims)
+  testthat::expect_equal(dim(loadings_mat), c(20,20))
+  testthat::expect_equal(dim(coords_mat), c(20, 100))
+  # check calculated coordinates
+  pca_ref <- prcomp(t(SummarizedExperiment::assay(se2, 'assay1')), scale. = TRUE, center = TRUE)
+  testthat::expect_true(all(t(pca_ref$x) == coords_mat))
 })

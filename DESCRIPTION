@@ -1,7 +1,7 @@
-Package: IntegratedVarimax
+Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.0
+Version: 0.1.001
 Author: Who wrote it
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
@@ -12,7 +12,9 @@ LazyData: true
 Suggests:
   testthat
 Imports:
-  MultiAssayExperiment
-  SummarizedExperiment
+  Matrix,
+  matrixStats,
+  MultiAssayExperiment,
+  SummarizedExperiment,
   stats
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
