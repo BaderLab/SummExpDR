@@ -50,3 +50,5 @@ testthat::test_that('runPCA works', {
   pca_ref <- prcomp(t(SummarizedExperiment::assay(se2, 'assay1')), scale. = TRUE, center = TRUE)
   testthat::expect_true(all(t(pca_ref$x) == coords_mat))
 })
+
+testthat::test_that('')
