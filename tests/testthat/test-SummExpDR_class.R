@@ -63,3 +63,15 @@ testthat::test_that('varianceExplained works', {
   testthat::expect_equal(var_expl_res$r2_by_dim, r2_dim_ref)
   testthat::expect_equal(var_expl_res$r2_all, r2_total_ref)
 })
+
+testthat::test_that('runVarimax works', {
+  SEDR2 <- runVarimax(SEDR2, key = 'PCA_assay1', dims_use = 1:3)
+  vmax_result <- getReducedDims(SEDR2, 'varimax')
+  vmax_result_loadings <- getLoadings(vmax_result)
+  pca_result <- getReducedDims(SEDR2, 'PCA_assay1')
+  pca_loadings <- getLoadings(pca_result, red_dims = 1:3)
+  vmax_ref <- varimax(t(pca_loadings))
+  vmax_ref_loadings <- t(vmax_ref$loadings[,])
+  rownames(vmax_ref_loadings) <- paste0('VM', 1:3)
+  testthat::expect_equal(vmax_ref_loadings, vmax_result_loadings)
+})

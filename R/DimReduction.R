@@ -277,6 +277,7 @@ setMethod('runPCA',
 #' @param key key for LinearDR in ReducedDims to access
 #' @param dims_use dims to use (character or integer/logical index, character preferred)
 #' @param ... other args to pass to stats::varimax
+#' @value returns SummExpDR object with
 #' @export
 
 setGeneric('runVarimax', function(x, key, dims_use = NULL, suffix = '', ...) standardGeneric('runVarimax'))
@@ -293,12 +294,12 @@ setMethod('runVarimax',
             colnames(vmax_loadings) <- paste0('VM', 1:ncol(vmax_loadings))
             # compute new coords
             assay_used <- LinearDR@sourceAssay
-            tryCatch(stopifnot(is.character(assay_used)), {
+            tryCatch(stopifnot(is.character(assay_used)), error = function(e) {
               stop('assay not specified for Linear DR selected')
             })
             summ_exp <- getSummExp(x)
             assay_names <- SummarizedExperiment::assayNames(summ_exp)
-            tryCatch(stopifnot(assay_used %in% assay_names), {
+            tryCatch(stopifnot(assay_used %in% assay_names), error = function(e) {
               stop('assay not in SummExpDR\'s SummarizedExperiment object\'s list of assay names')
             })
             # coords are in m samples x p features format
@@ -307,7 +308,8 @@ setMethod('runVarimax',
             data_coords <- t(SummarizedExperiment::assay(summ_exp, assay_used))
             new_coords <- data_coords %*% vmax_loadings
             rownames(new_coords) <- rownames(data_coords)
-            row_data = S4Vectors::DataFrame(as.data.frame(t(loadings)))
+            row_data = S4Vectors::DataFrame(as.data.frame(t(vmax_loadings)))
+            colnames(row_data) <- paste0(colnames(row_data), '_loading')
             SampleID <- rownames(new_coords)
             col_data <- S4Vectors::DataFrame(SampleID = SampleID, row.names = SampleID)
             VmaxDR <- create_LinearDR(assays = list(varimax = t(new_coords)),
