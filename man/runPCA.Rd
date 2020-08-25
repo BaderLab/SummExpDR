@@ -2,8 +2,7 @@
 % Please edit documentation in R/DimReduction.R
 \name{runPCA}
 \alias{runPCA}
-\title{#' method for calculating reconstruction accuracy
-#'}
+\title{Run PCA on assay data}
 \usage{
 runPCA(x, i = NULL, suffix = NULL, std_norm = TRUE)
 }
@@ -18,15 +17,5 @@ matrix must have the form n features x m samples}
 \item{std_norm}{whether to standard normalize data}
 }
 \description{
-setGeneric('qualityMetric',  function(x, key, dims_use) standardGeneric("qualityMetric"))
-}
-\details{
-setMethod('qualityMetric',
-          signature = 'SummExpDR',
-          function(x, key, dims_use) {
-            FactorizedDR <- getReducedDims(x, key)
-            assay_used <- FactorizedDR@sourceAssay
-            input_data_SE <- getSummExp()
-          })
 Run PCA on assay data
 }

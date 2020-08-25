@@ -149,18 +149,60 @@ create_FactorizedDR <- function(assays, ...) {
   return(FactorizedDR)
 }
 
-#' #' method for calculating reconstruction accuracy
-#' #'
+#' method for calculating reconstruction accuracy
 #'
-#' setGeneric('qualityMetric',  function(x, key, dims_use) standardGeneric("qualityMetric"))
+#' Calculates reconstruction accuracy (r-squared) of matrix factorization w.r.t. input data for
+#' fitting matrix factorization
 #'
-#' setMethod('qualityMetric',
-#'           signature = 'SummExpDR',
-#'           function(x, key, dims_use) {
-#'             FactorizedDR <- getReducedDims(x, key)
-#'             assay_used <- FactorizedDR@sourceAssay
-#'             input_data_SE <- getSummExp()
-#'           })
+#' @param x SummExpDR with FactorizedDR dimensionality reduction object computed
+#' @param key string indicating which item from reducedDims to compute reconstruction accuracy for
+#' @param dims_use integer vector of character vector indicating dimensions to use, or NULL for all dimensions
+#' @value returns list with variance explained per dimension as well as total variance explained by dimensions selected
+
+setGeneric('varianceExplained',  function(x, key, dims_use = NULL) standardGeneric("varianceExplained"))
+
+setMethod('varianceExplained',
+          signature = 'SummExpDR',
+          function(x, key, dims_use = NULL) {
+            FactorizedDR <- getReducedDims(x, key)
+            assay_used <- FactorizedDR@sourceAssay
+            # get input data used for this dim reduction
+            input_data_SE <- getSummExp(x)
+            input_data <- t(SummarizedExperiment::assay(input_data_SE, assay_used))
+            mean_mat <- matrixStats::colMeans2(input_data)
+            centered_mat <- input_data - mean_mat
+            total_var = sum(centered_mat^2)
+            # loadings matrix in in p dimensions x n features format
+            loadings_mat <- getLoadings(FactorizedDR)
+            tryCatch(stopifnot(all(colnames(loadings_mat) == colnames(input_data))),
+                     error = function(e) {
+                       stop('colnames of loadings matrix do not match feature names of input data')
+                     })
+            var_by_dim <- numeric(length(dims_use))
+            names(var_by_dim) <- rownames(loadings_mat[dims_use,])
+
+            # get embeddings in m samples x p dimensions format
+            embeddings_mat <- t(getEmbeddings(FactorizedDR))
+            # calculate variance explained per each individual dim
+            for (d in dims_use) {
+              reconst_d <- embeddings_mat[,d, drop = FALSE] %*% loadings_mat[d, , drop = FALSE]
+              resid_d <- input_data - reconst_d
+              r2_d <- 1 - sum(resid_d^2)/total_var
+              if (r2_d < 0) {
+                # floor r2 at 0. while r2 can be negative, can't have lower than 0% of variance in data explained
+                r2_d <- 0
+              }
+              var_by_dim[d] <- r2_d
+            }
+            # calculate total variance explained by dims picked
+            reconst_all <- embeddings_mat[,dims_use, drop = FALSE] %*% loadings_mat[dims_use, , drop = FALSE]
+            resid_all <- input_data - reconst_all
+            r2_all <- 1 - sum(resid_all^2)/total_var
+            if (r2_all < 0) {
+              r2_all <- 0
+            }
+            return(list(r2_by_dim = var_by_dim, r2_all = r2_all))
+          })
 
 # Methods for Running Dimensionality Reduction --------------------------------
 
@@ -205,31 +247,25 @@ setMethod('runPCA',
             return(pca_summ_exp)
           })
 
+
 setMethod('runPCA',
-          c('SummarizedExperiment'),
-          function(x, i, suffix = NULL, std_norm = TRUE) {
+          c('SummExpDR'),
+          function(x, i, suffix, std_norm = TRUE) {
             if (is.numeric(i)) {
-              assay_name <- SummarizedExperiment::assays(x)[i]
+              assay_name <- SummarizedExperiment::assays(x@summ_exp)[i]
             } else {
               assay_name <- i
             }
             if (std_norm) {
               new_assay_name <- paste0(assay_name, '_std_norm')
-              SummarizedExperiment::assay(x, new_assay_name) <- t(scale(t(SummarizedExperiment::assay(x, assay_name))))
+              SummarizedExperiment::assay(x@summ_exp, new_assay_name) <- t(scale(t(SummarizedExperiment::assay(x@summ_exp, assay_name))))
               assay_use <- new_assay_name
             } else {
               assay_use <- assay_name
             }
-            pca_summ_exp <- runPCA(SummarizedExperiment::assay(x, assay_use), std_norm = FALSE)
+            pca_summ_exp <- runPCA(SummarizedExperiment::assay(x@summ_exp, assay_use), std_norm = FALSE)
             # record assay used
-            setSourceAssay(pca_summ_exp, assay_use)
-            return(pca_summ_exp)
-          })
-
-setMethod('runPCA',
-          c('SummExpDR'),
-          function(x, i, suffix, std_norm = TRUE) {
-            pca_summ_exp <- runPCA(getSummExp(x), i, suffix, std_norm)
+            pca_summ_exp <- setSourceAssay(pca_summ_exp, assay_use)
             key = paste0('PCA', suffix)
             x <- setReducedDims(x, key = key, value = pca_summ_exp)
             return(x)

@@ -36,19 +36,30 @@ row_data2 <- S4Vectors::DataFrame(data.frame(texture = sample(c('soft', 'medium'
                                                          replace = TRUE),
                                              row.names = rownames(data_mat2),
                                              stringsAsFactors = FALSE))
+se2 <- SummarizedExperiment::SummarizedExperiment(assays = list(assay1 = data_mat2), rowData = row_data2, colData = col_data2)
+SEDR2 <- create_SummExpDR(se2)
+SEDR2 <- runPCA(SEDR2, 'assay1', '_assay1')
+pca_ref <- prcomp(t(SummarizedExperiment::assay(se2, 'assay1')), scale. = TRUE, center = TRUE)
 
 testthat::test_that('runPCA works', {
-  se2 <- SummarizedExperiment::SummarizedExperiment(assays = list(assay1 = data_mat2), rowData = row_data2, colData = col_data2)
-  SEDR2 <- create_SummExpDR(se2)
-  SEDR2 <- runPCA(SEDR2, 'assay1', '_assay1')
   reduced_dims <- getReducedDims(SEDR2, key = 'PCA_assay1')
   loadings_mat <- getLoadings(reduced_dims)
   coords_mat <- getEmbeddings(reduced_dims)
   testthat::expect_equal(dim(loadings_mat), c(20,20))
   testthat::expect_equal(dim(coords_mat), c(20, 100))
   # check calculated coordinates
-  pca_ref <- prcomp(t(SummarizedExperiment::assay(se2, 'assay1')), scale. = TRUE, center = TRUE)
+
   testthat::expect_true(all(t(pca_ref$x) == coords_mat))
 })
 
-testthat::test_that('')
+testthat::test_that('varianceExplained works', {
+  # in this case calculating variance explained by first 3 PCs
+  dims_use <- 1:3
+  var_expl_res <- varianceExplained(SEDR2, key = 'PCA_assay1', dims_use = dims_use)
+  total_var_ref <- sum(pca_ref$sdev^2)
+  r2_dim_ref <- (pca_ref$sdev^2)[dims_use]/total_var_ref
+  r2_total_ref <- sum((pca_ref$sdev^2)[dims_use])/total_var_ref
+  names(r2_dim_ref) <- paste0('PC', dims_use)
+  testthat::expect_equal(var_expl_res$r2_by_dim, r2_dim_ref)
+  testthat::expect_equal(var_expl_res$r2_all, r2_total_ref)
+})
