@@ -6,6 +6,7 @@
 #'
 #' inherits from SummarizedExperiment. assay data = dimensionality reduction
 #' coordinates, rows correspond to PCs, cols correspond to samples
+#' @include SummExpDR.R
 #' @inherit SummarizedExperiment::SummarizedExperiment
 #' @slot sourceAssay assay used to create Dimensionality Reduction object.
 #' This comes in handy for varimax rotation, where knowledge of which assay
@@ -156,14 +157,17 @@ create_FactorizedDR <- function(assays, ...) {
 #'
 #' @param x SummExpDR with FactorizedDR dimensionality reduction object computed
 #' @param key string indicating which item from reducedDims to compute reconstruction accuracy for
-#' @param dims_use integer vector of character vector indicating dimensions to use, or NULL for all dimensions
+#' @param dims_use integer vector or character vector indicating dimensions to use, or NULL for all dimensions
+#' @param feats_use integer vector or character vector indicating features to compute variance explained for. if NULL,
+#' all features. Essentially you subset the data matrix and the reconstructed data matrix for the selected features,
+#' then compute r-squared to compare those subset matrices.
 #' @value returns list with variance explained per dimension as well as total variance explained by dimensions selected
 
-setGeneric('varianceExplained',  function(x, key, dims_use = NULL) standardGeneric("varianceExplained"))
+setGeneric('varianceExplained',  function(x, key, dims_use = NULL, feats_use = NULL) standardGeneric("varianceExplained"))
 
 setMethod('varianceExplained',
           signature = 'SummExpDR',
-          function(x, key, dims_use = NULL) {
+          function(x, key, dims_use = NULL, feats_use = NULL) {
             FactorizedDR <- getReducedDims(x, key)
             assay_used <- FactorizedDR@sourceAssay
             # get input data used for this dim reduction
@@ -183,10 +187,16 @@ setMethod('varianceExplained',
 
             # get embeddings in m samples x p dimensions format
             embeddings_mat <- t(getEmbeddings(FactorizedDR))
+
+            # determine features to use
+            if (is.null(feats_use)) {
+              feats_use <- 1:ncol(input_data)
+            }
+
             # calculate variance explained per each individual dim
             for (d in dims_use) {
               reconst_d <- embeddings_mat[,d, drop = FALSE] %*% loadings_mat[d, , drop = FALSE]
-              resid_d <- input_data - reconst_d
+              resid_d <- input_data[,feats_use] - reconst_d[,feats_use]
               r2_d <- 1 - sum(resid_d^2)/total_var
               if (r2_d < 0) {
                 # floor r2 at 0. while r2 can be negative, can't have lower than 0% of variance in data explained
@@ -196,7 +206,7 @@ setMethod('varianceExplained',
             }
             # calculate total variance explained by dims picked
             reconst_all <- embeddings_mat[,dims_use, drop = FALSE] %*% loadings_mat[dims_use, , drop = FALSE]
-            resid_all <- input_data - reconst_all
+            resid_all <- input_data[,feats_use] - reconst_all[,feats_use]
             r2_all <- 1 - sum(resid_all^2)/total_var
             if (r2_all < 0) {
               r2_all <- 0

@@ -83,6 +83,46 @@ setMethod('setReducedDims',
             return(x)
           })
 
+#' Subset Data
+#' @param x SummExpDR object
+#' @param rows
+#' @param cols
+#' @value subsetted SummExpDR object for given rows (features) and cols (samples)
+setGeneric('subsetData', function(x, rows, cols) standardGeneric('subsetData'))
+
+setMethod('subsetData',
+          'SummExpDR',
+          function(x, rows = NULL, cols = NULL) {
+            summ_exp <- getSummExp(x)
+            dr_keys <- getReducedDims_keys(x)
+            all_rows <- rownames(summ_exp)
+            all_cols <- colnames(summ_exp)
+            if (is.null(rows)) {
+              rows <- all_rows
+            } else if (is.numeric(rows)) {
+              rows <- all_rows[rows]
+            } else if (!is.character(rows)) {
+              stop('rows must be specified as character or integer')
+            }
+            if (is.null(cols)) {
+              cols <- all_cols
+            } else if (is.numeric(cols)) {
+              cols <- all_cols[cols]
+            } else if (!is.character(cols)) {
+              stop('cols must be specified as character or integer')
+            }
+            summ_exp <- summ_exp[rows, cols]
+            new_SummExpDR <- create_SummExpDR(summ_exp)
+
+            for (k in dr_keys) {
+              # note that features used to calculate reduced dims, found in
+              # rowdata of FactorizedDR objects, are not subsetted
+              reduced_dims_k <- getReducedDims(x, k)[,cols]
+              new_SummExpDR <- setReducedDims(new_SummExpDR, k, reduced_dims_k)
+            }
+            return(new_SummExpDR)
+          })
+
 # Check Validity --------------------------------------------------------------
 
 .validSummExpDR <- function(x) {

@@ -1,22 +1,5 @@
 testthat::context('SummExpRD_class')
 
-data_mat <- matrix(rnorm(9), nrow = 3)
-rownames(data_mat) <- c('a', 'b', 'c')
-colnames(data_mat) <- c('x', 'y', 'z')
-col_data <- S4Vectors::DataFrame(data.frame(color = c('red', 'blue', 'green'),
-                                            int = 1:3, row.names = colnames(data_mat),
-                                            stringsAsFactors = FALSE))
-row_data <- S4Vectors::DataFrame(data.frame(texture = c('soft', 'medium', 'rough'),
-                                            id = 7:9, row.names = rownames(data_mat),
-                                            stringsAsFactors = FALSE))
-
-testthat::test_that('class created correctly', {
-  se <- SummarizedExperiment::SummarizedExperiment(assays = list(assay1 = data_mat), rowData = row_data, colData = col_data)
-  SEDR <- create_SummExpDR(se)
-  testthat::expect_error(create_SummExpDR(data_mat))
-})
-
-
 data_mat2 <- t(matrix(rnorm(2000), nrow = 100, ncol = 20))
 rownames(data_mat2) <- paste0('feat', 1:nrow(data_mat2))
 colnames(data_mat2) <- paste0('sample', 1:ncol(data_mat2))
@@ -74,4 +57,17 @@ testthat::test_that('runVarimax works', {
   vmax_ref_loadings <- t(vmax_ref$loadings[,])
   rownames(vmax_ref_loadings) <- paste0('VM', 1:3)
   testthat::expect_equal(vmax_ref_loadings, vmax_result_loadings)
+})
+
+testthat::test_that('subsetting works properly', {
+  SEDR2_subs <- subsetData(SEDR2, rows = 2:5, cols = 7:10)
+  summ_exp <- getSummExp(SEDR2)
+  summ_exp_subs <- getSummExp(SEDR2_subs)
+  testthat::expect_equal(summ_exp[2:5, 7:10], summ_exp_subs)
+  DR_subs <- getReducedDims(SEDR2_subs, 'PCA_assay1')
+  DR_orig <- getReducedDims(SEDR2, 'PCA_assay1')
+  testthat::expect_equal(colnames(DR_subs), colnames(summ_exp_subs))
+  testthat::expect_equal(rownames(DR_subs), rownames(DR_orig))
+  testthat::expect_equal(colnames(SummarizedExperiment::rowData(DR_subs)),
+                         colnames(SummarizedExperiment::rowData(DR_orig)))
 })

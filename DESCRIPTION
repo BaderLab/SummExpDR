@@ -12,9 +12,17 @@ LazyData: true
 Suggests:
   testthat
 Imports:
+  dplyr,  
   Matrix,
   matrixStats,
-  MultiAssayExperiment,
+  reticulate,
   SummarizedExperiment,
   stats
 RoxygenNote: 7.0.2
+Collate: 
+    'SummExpDR.R'
+    'DimReduction.R'
+    'Imputation.R'
+    'MultiExpIntegration.R'
+    'hello.R'
+    'zzz.R'
