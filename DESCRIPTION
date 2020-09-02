@@ -24,5 +24,4 @@ Collate:
     'DimReduction.R'
     'Imputation.R'
     'MultiExpIntegration.R'
-    'hello.R'
     'zzz.R'

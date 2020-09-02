@@ -9,7 +9,7 @@ scaleExpData(x, assay)
 \arguments{
 \item{x}{multiExp object}
 
-\item{assay}{character, assay to}
+\item{assay}{character, assay to pull out for scaling.}
 }
 \description{
 Scale Experiment Data

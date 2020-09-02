@@ -4,10 +4,12 @@
 \alias{imputeExpData}
 \title{Impute Missing Data in multiExp object}
 \usage{
-imputeExpData(x, ...)
+imputeExpData(x, assay = "stacked", ...)
 }
 \arguments{
 \item{x}{multiExp object}
+
+\item{assay}{assay for which data is to be imputed. by default it's stacked, the assay name for all of the input data stacked together}
 
 \item{...}{other args for sklearn.impute.KNNImputer}
 }

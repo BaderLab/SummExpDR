@@ -144,13 +144,13 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
   return(newMultiExp)
 }
 
-setGeneric('getScaleFactors',  function(x) standardGeneric("getScaleFactors"))
+setGeneric('getScaleFactors',  function(x, assay) standardGeneric("getScaleFactors"))
 
 setMethod('getScaleFactors',
           signature = 'multiExp',
-          function(x) {
+          function(x, assay) {
             summ_expt <- getSummExp(x)
-            data_mat <- SummarizedExperiment::assay(summ_expt, 'stacked')
+            data_mat <- SummarizedExperiment::assay(summ_expt, assay)
             row_data <- SummarizedExperiment::rowData(summ_expt)
             unique_expts <- unique(row_data$expt)
             scale_factors <- c()
@@ -170,16 +170,17 @@ setMethod('getScaleFactors',
 
 #' Impute Missing Data in multiExp object
 #' @param x multiExp object
+#' @param assay assay for which data is to be imputed. by default it's stacked, the assay name for all of the input data stacked together
 #' @param ... other args for sklearn.impute.KNNImputer
 #' @export
 
-setGeneric('imputeExpData',  function(x, ...) standardGeneric("imputeExpData"))
+setGeneric('imputeExpData',  function(x, assay = 'stacked', ...) standardGeneric("imputeExpData"))
 
 setMethod('imputeExpData',
           signature = 'multiExp',
-          function(x, ...) {
+          function(x, assay = 'stacked', ...) {
             summ_expt <- getSummExp(x)
-            data_mat <- SummarizedExperiment::assay(summ_expt, 'stacked')
+            data_mat <- SummarizedExperiment::assay(summ_expt, assay)
             na_inds <- which(is.na(data_mat))
             is_imputed <- matrix(data = 0L, nrow = nrow(data_mat), ncol = ncol(data_mat))
             rownames(is_imputed) <- rownames(data_mat)
@@ -187,7 +188,7 @@ setMethod('imputeExpData',
             if (length(na_inds) > 0) {
               print(paste('running imputation for', length(na_inds), 'of', length(data_mat), 'values'))
               is_imputed[na_inds] <- 1L
-              scale_factors <- getScaleFactors(x)
+              scale_factors <- getScaleFactors(x, assay)
               imputed_mat <- KNN_scale_impute(data_mat, scale_factors, ...)
               SummarizedExperiment::assay(summ_expt, 'imputed_mat') <- imputed_mat
             } else {
@@ -202,7 +203,7 @@ setMethod('imputeExpData',
 #' Scale Experiment Data
 #'
 #' @param x multiExp object
-#' @param assay character, assay to
+#' @param assay character, assay to pull out for scaling.
 #' @value multiExp object with 'scaled' data added
 
 setGeneric('scaleExpData', function(x, assay) standardGeneric('scaleExpData'))
@@ -210,10 +211,12 @@ setGeneric('scaleExpData', function(x, assay) standardGeneric('scaleExpData'))
 setMethod('scaleExpData',
           signature = 'multiExp',
           function(x, assay) {
-            scale_factors <- getScaleFactors(x)
+            # standard deviation is same whether it's computed before or after centering data
+            # recall that scale factor is 1/(sd * sqrt(feats))
+            scale_factors <- getScaleFactors(x, assay)
             summ_expt <- getSummExp(x)
             data_mat <- SummarizedExperiment::assay(summ_expt, assay)
-            data_mat <- t(scale(t(data_mat), scale = TRUE, center = TRUE))
+            data_mat <- t(scale(t(data_mat), scale = FALSE, center = TRUE))
             scale_mat <- matrix(rep(scale_factors[rownames(data_mat)], ncol(data_mat)),
                                 nrow = nrow(data_mat),
                                 byrow = FALSE)

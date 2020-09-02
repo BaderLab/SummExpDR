@@ -4,7 +4,7 @@ set.seed(42L)
 data1 <- matrix(c(rnorm(9000), rnorm(1000, 3)), nrow = 100)
 rownames(data1) <- paste0('data1_', 1:nrow(data1))
 colnames(data1) <- as.character(1:ncol(data1))
-# 60 x 250 matrix
+# 60 x 200 matrix
 data2 <- matrix(c(rnorm(2400, 5, 2), rnorm(9600, 2, 5)), nrow = 60)
 rownames(data2) <- paste0('data2_', 1:nrow(data2))
 colnames(data2) <- as.character(51:250)
@@ -44,18 +44,19 @@ testthat::test_that('multiExp data imputation produces expected output', {
   testthat::expect_lt(abs(mean(imputed_data[101:160,as.character(1:50)]) - 5), 1)
 })
 
-# testthat::test_that('data scaling works properly', {
-#   multiExp <- createMultiExp(summ_exp_list = list(data1 = summExp1, data2 = summExp2), assays_use = c(data1 = 'mat', data2 = 'mat'))
-#   multiExp <- imputeExpData(multiExp)
-#   multiExp <- scaleExpData(multiExp, assay = 'imputed_mat')
-#   scale_factors <- getScaleFactors(multiExp)
-#   summ_exp <- getSummExp(multiExp)
-#   scaled_data <- SummarizedExperiment::assay(summ_exp, 'scaled')
-#   testthat::expect_true(all(matrixStats::rowMeans2(scaled_data) - 0 < .Machine$double.eps))
-#   covar_mat <- scaled_data %*% t(scaled_data)
-#   total_var <- sum(diag(covar_mat))
-#
-# })
+testthat::test_that('data scaling works properly', {
+  multiExp <- createMultiExp(summ_exp_list = list(data1 = summExp1, data2 = summExp2), assays_use = c(data1 = 'mat', data2 = 'mat'))
+  multiExp <- imputeExpData(multiExp)
+  multiExp <- scaleExpData(multiExp, assay = 'imputed_mat')
+  summ_exp <- getSummExp(multiExp)
+  scaled_data <- SummarizedExperiment::assay(summ_exp, 'scaled')
+  testthat::expect_true(all(matrixStats::rowMeans2(scaled_data) - 0 < .Machine$double.eps))
+  covar_mat <- (scaled_data %*% t(scaled_data))/(ncol(scaled_data) - 1)
+  var_data1 <- sum(diag(covar_mat)[1:100])
+  var_data2 <- sum(diag(covar_mat)[101:160])
+  testthat::expect_equal(var_data1, 1L)
+  testthat::expect_equal(var_data2, 1L)
+})
 #
 # testthat::test_that('runPCA workflow works', {
 #
