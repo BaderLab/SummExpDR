@@ -123,6 +123,7 @@ setMethod('subsetData',
             return(new_SummExpDR)
           })
 
+
 # Check Validity --------------------------------------------------------------
 
 .validSummExpDR <- function(x) {

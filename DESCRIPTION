@@ -12,7 +12,8 @@ LazyData: true
 Suggests:
   testthat
 Imports:
-  dplyr,  
+  dplyr,
+  ggplot2,
   Matrix,
   matrixStats,
   reticulate,
@@ -24,4 +25,5 @@ Collate:
     'DimReduction.R'
     'Imputation.R'
     'MultiExpIntegration.R'
+    'PlotFunctions.R'
     'zzz.R'
