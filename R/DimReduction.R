@@ -6,8 +6,8 @@
 #'
 #' inherits from SummarizedExperiment. assay data = dimensionality reduction
 #' coordinates, rows correspond to PCs, cols correspond to samples
+#' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @include SummExpDR.R
-#' @inherit SummarizedExperiment::SummarizedExperiment
 #' @slot sourceAssay assay used to create Dimensionality Reduction object.
 #' This comes in handy for varimax rotation, where knowledge of which assay
 #' used for PCA is necessary to recompute reduced dims.

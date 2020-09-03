@@ -15,6 +15,7 @@ if dimensionality reduction is rerun.
 \describe{
 \item{\code{summ_exp}}{SummarizedExperiment}
 
-\item{\code{reducedDims}}{list of SummarizedExperiment objects, containing sample names (colData)}
+\item{\code{reducedDims}}{list of SummarizedExperiment objects, containing sample names (colData)
+and reduced dim metadata (e.g. loadings, variance explained)}
 }}
 

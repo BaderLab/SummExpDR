@@ -7,11 +7,12 @@
 #' Note that subsetting methods are not included as subsetting AFTER performing
 #' dimensionality reduction typically means that you won't get the same coordinates
 #' if dimensionality reduction is rerun.
-#'
+#' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @slot summ_exp SummarizedExperiment
 #' @slot reducedDims list of SummarizedExperiment objects, containing sample names (colData)
-#' @export
 #' and reduced dim metadata (e.g. loadings, variance explained)
+#' @export
+
 
 setClass('SummExpDR', representation = list('summ_exp' = 'SummarizedExperiment',
                                             'reducedDims' = 'list'))

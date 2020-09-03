@@ -16,6 +16,7 @@ Imports:
   ggplot2,
   Matrix,
   matrixStats,
+  methods,
   reticulate,
   SummarizedExperiment,
   stats
