@@ -182,11 +182,17 @@ setMethod('varianceExplained',
                      error = function(e) {
                        stop('colnames of loadings matrix do not match feature names of input data')
                      })
-            var_by_dim <- numeric(length(dims_use))
-            names(var_by_dim) <- rownames(loadings_mat[dims_use,])
+
 
             # get embeddings in m samples x p dimensions format
             embeddings_mat <- t(getEmbeddings(FactorizedDR))
+            # setup variable to contain variance by dimension
+            dim_names <- rownames(loadings_mat)
+            if (is.null(dims_use)) {
+              dims_use <- dim_names
+            }
+            var_by_dim <- numeric(length(dims_use))
+            names(var_by_dim) <- rownames(loadings_mat[dims_use,])
 
             # determine features to use
             if (is.null(feats_use)) {
@@ -195,6 +201,7 @@ setMethod('varianceExplained',
 
             # calculate variance explained per each individual dim
             for (d in dims_use) {
+              # TODO: make separate function fo reconstructing data, separate for calculating r-squared
               reconst_d <- embeddings_mat[,d, drop = FALSE] %*% loadings_mat[d, , drop = FALSE]
               resid_d <- input_data[,feats_use] - reconst_d[,feats_use]
               r2_d <- 1 - sum(resid_d^2)/total_var

@@ -142,3 +142,44 @@ scatter_plot <- function(df, var1, var2, color_by,
   return(p)
 }
 
+#' Plot Reduced Dims
+#' @param x SummExpDR object
+#' @param dim1
+#' @param dim2
+#' @param color_by
+#' @param key key for reduced dims to use
+#' @param assay required if pulling ouot feature values for assay data
+#' @param ... other arguments to scatter_plot, with var1 and var2 overridden by dim1 and dim2
+#' @value ggplot2 object
+
+setGeneric('plotDR', function(x, dim1, dim2, color_by, key, assay = NULL, ...) standardGeneric('plotDR'))
+
+setMethod('plotDR',
+          signature = 'SummExpDR',
+          function(x, dim1, dim2, color_by, key, assay = NULL, ...) {
+            vars_fetch <- c(dim1, dim2, color_by)
+            fetched_data <- fetchData(x, varsFetch = vars_fetch, assayKey = assay, redDimKeys = key, mode = 'samplewise')
+            # renaming is to avoid weird erros when inputs have same name as arguments in functiton
+            col <- color_by
+            p <- scatter_plot(var1 = dim1, var2 = dim2, color_by = col, ...)
+            return(p)
+          })
+
+#' Scree Plot of Explained Variance
+#'
+#' @inheritParams varianceExplained
+#' @param dims_use dims to plot. if NULL plot all
+#' @value ggplot2 object
+
+setGeneric('screePlot', function(x, key, feats_use = NULL, dims_use = NULL) standardGeneric('screePlot'))
+
+setMethod('screePlot',
+          signature = 'SummExpDR',
+          function(x, key, feats_use = NULL, dims_use = NULL) {
+            var_expl <- varianceExplained(x, key, NULL, feats_use)$r2_by_dim[dims_use]
+            plot_df <- data.frame(dim = names(var_expl), pct_var = var_expl)
+            p <- ggplot(data = plot_df, mapping = aes(dim, pct_var)) + geom_line(color = 'blue') +
+              geom_point(size = 4.0)
+            return(p)
+          })
+
