@@ -11,6 +11,8 @@
 KNN_impute <- function(x, ...) {
   imputer <- SKLEARN_IMPUTE$KNNImputer(...)
   x_imputed <- t(imputer$fit_transform(t(x)))
+  rownames(x_imputed) <- rownames(x)
+  colnames(x_imputed) <- colnames(x)
   return(x_imputed)
 }
 
@@ -38,7 +40,13 @@ KNN_scale_impute <- function(x, scale_factors = NULL, ...) {
   scale_mat <- matrix(rep(scale_factors[rownames(x)], ncol(x)), byrow = FALSE, nrow = nrow(x))
   x_scaled <- (x - x_hat)*scale_mat
   x_scaled_imp <- KNN_impute(x_scaled, ...)
+  tryCatch({stopifnot(nrow(x_scaled_imp) == nrow(x))},
+           error = function(e) {
+             stop('number of features in imputed matrix do not match number of features in input matrix, likely have features with no values whatsoever')
+           })
   # rescale data to original scale and uncenter data
   x_unscaled_imp <- (x_scaled_imp)/scale_mat + x_hat
+  rownames(x_unscaled_imp) <- rownames(x)
+  colnames(x_unscaled_imp) <- colnames(x)
   return(x_unscaled_imp)
 }
