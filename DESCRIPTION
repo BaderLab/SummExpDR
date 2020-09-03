@@ -1,8 +1,8 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.001
-Author: Who wrote it
+Version: 0.1.003
+Author: Owen Whitley
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
@@ -14,6 +14,7 @@ Suggests:
 Imports:
   dplyr,
   ggplot2,
+  GSVA,
   Matrix,
   matrixStats,
   methods,
@@ -27,4 +28,5 @@ Collate:
     'Imputation.R'
     'MultiExpIntegration.R'
     'PlotFunctions.R'
+    'gsva_scoring.R'
     'zzz.R'

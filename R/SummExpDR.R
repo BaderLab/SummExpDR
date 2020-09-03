@@ -84,6 +84,28 @@ setMethod('setReducedDims',
             return(x)
           })
 
+#' Row Data
+#' @param x SummExpDR object
+#' @value rowData from Summ Exp DR object
+setGeneric('rowData', function(x) standardGeneric('rowData'))
+
+setMethod('rowData',
+          signature = 'SummExpDR',
+          function(x) {
+            return(SummarizedExperiment::rowData(getSummExp(x)))
+          })
+
+#' Col Data
+#' @param x SummExpDR object
+#' @value rowData from Summ Exp DR object
+setGeneric('colData', function(x) standardGeneric('colData'))
+
+setMethod('colData',
+          signature = 'SummExpDR',
+          function(x) {
+            return(SummarizedExperiment::colData(getSummExp(x)))
+          })
+
 #' Subset Data
 #' @param x SummExpDR object
 #' @param rows

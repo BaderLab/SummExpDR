@@ -197,6 +197,7 @@ setMethod('imputeExpData',
 #' @param x multiExp object
 #' @param assay character, assay to pull out for scaling.
 #' @value multiExp object with 'scaled' data added
+#' @export
 
 setGeneric('scaleExpData', function(x, assay) standardGeneric('scaleExpData'))
 
