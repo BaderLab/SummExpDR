@@ -26,15 +26,7 @@ setClass('multiExp',
 
 createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
 
-  replace_col <- function(DF, col_name, value, suffix) {
-    if (col_name %in% colnames(DF)) {
-      new_colname <- paste(col_name, suffix, sep = '_')
-      colnames(DF)[grep(paste0('^', col_name, '$'), col_name)] <- new_colname
-      warning(paste(col_name, 'in column names of DF renamed to', new_colname))
-    }
-    DF[[col_name]] <- value
-    return(DF)
-  }
+
 
   expt_names <- names(summ_exp_list)
 

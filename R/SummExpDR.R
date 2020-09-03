@@ -124,6 +124,101 @@ setMethod('subsetData',
             return(new_SummExpDR)
           })
 
+#' helper function to replace column
+replace_col <- function(DF, col_name, value, suffix) {
+  if (col_name %in% colnames(DF)) {
+    new_colname <- paste(col_name, suffix, sep = '_')
+    colnames(DF)[grep(paste0('^', col_name, '$'), col_name)] <- new_colname
+    warning(paste(col_name, 'in column names of DF renamed to', new_colname))
+  }
+  DF[[col_name]] <- value
+  return(DF)
+}
+
+#' Interface to fetch data from object
+#' @param x SummExpDR object
+#' @param varsFetch variables to pull out
+#' @param redDimKeys keys for reduced dims to pull out
+#' @param assayKey assay to pull from summExp object
+#' @param mode whether to pull data in a sample x feature format or feature x feature_info format
+#' for sample x feature (sample_wises), first pull colData of summ exp object, then join with embeddings from redDimKeys
+#' and with assay data from assay keys. for feature x feat info, pull out rowData, then any loadings for reduced dim keys
+
+setGeneric('fetchData', function(x, varsFetch, redDimKeys = NULL, assayKey = NULL, mode = 'sample_wise') standardGeneric('fetchData'))
+
+setMethod('fetchData',
+          signature = 'SummExpDR',
+          function(x, varsFetch, redDimKeys = NULL, assayKey = NULL, mode = 'sample_wise') {
+            summ_exp <- getSummExp(x)
+            red_dim_list <- list()
+            if (!is.null(redDimKeys)) {
+              for (k in redDimKeys) {
+                red_dim_list[[k]] <- getReducedDims(x, k)
+              }
+            }
+
+            if (mode == 'sample_wise') {
+              data_fetched <- as.data.frame(SummarizedExperiment::colData(summ_exp))
+              data_fetched <- replace_col(data_fetched, col_name = 'row_names',
+                                          value = rownames(data_fetched), suffix = 'colData')
+
+              if (length(red_dim_list) > 0) {
+                for (k in redDimKeys) {
+                  embeddings_k <- as.data.frame(t(getEmbeddings(red_dim_list[[k]])))
+                  embeddings_k <- replace_col(embeddings_k, col_name = 'row_names',
+                                              value = rownames(embeddings_k), suffix = k)
+                  tryCatch({stopifnot(any(varsFetch %in% colnames(embeddings_k)))},
+                           error = function(e) {
+                             stop('no variables specified found in selected reduced dims\' embeddings')
+                           })
+                  data_fetched <- dplyr::left_join(data_fetched, embeddings_k, by = 'row_names', suffix = c('', k))
+                }
+              }
+
+              if (!is.null(assayKey)) {
+                feat_names <- rownames(summ_exp)
+                feats_extract <- intersect(feat_names, varsFetch)
+                tryCatch({stopifnot(length(feats_extract) > 0)},
+                         error = function(e) {
+                           stop('no variables specified found in assay feature names')
+                         })
+                assay_data <- as.data.frame(t(SummarizedExperiment::assay(summ_exp, assayKey)))[,feats_extract, drop = FALSE]
+                assay_data <- replace_col(assay_data, col_name = 'row_names',
+                                            value = rownames(assay_data), suffix = assayKey)
+                data_fetched <- dplyr::left_join(data_fetched, assay_data, by = 'row_names', )
+              }
+
+            } else if (mode == 'feature_wise') {
+              data_fetched <- as.data.frame(SummarizedExperiment::rowData(summ_exp))
+              data_fetched <- replace_col(data_fetched, col_name = 'row_names',
+                                          value = rownames(data_fetched), suffix = 'rowData')
+              if (length(red_dim_list) > 0) {
+                for (k in redDimKeys) {
+                  loadings_k <- as.data.frame(t(getLoadings(red_dim_list[[k]])))
+                  loadings_k <- replace_col(loadings_k, col_name = 'row_names',
+                                              value = rownames(loadings_k), suffix = k)
+                  tryCatch({stopifnot(any(varsFetch %in% colnames(loadings_k)))},
+                           error = function(e) {
+                             stop('no variables specified found in selected reduced dims\' embeddings')
+                           })
+                  data_fetched <- dplyr::left_join(data_fetched, loadings_k, by = 'row_names', suffix = c('', k))
+                }
+              }
+            } else {
+              stop('mode must be one of sample_wise, feature_wise')
+            }
+            tryCatch({stopifnot(all(varsFetch %in% colnames(data_fetched)))},
+                     error = function(e) {
+                       stop(paste('following columns missing from fetched data:',
+                                  paste(setdiff(varsFetch, colnames(data_fetched)), collapse = ',')))
+                     })
+            rownames(data_fetched) <- data_fetched[['row_names']]
+            data_fetched <- data_fetched[ ,varsFetch, drop = FALSE]
+            return(data_fetched)
+          })
+
+
+
 
 # Check Validity --------------------------------------------------------------
 

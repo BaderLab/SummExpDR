@@ -71,3 +71,23 @@ testthat::test_that('subsetting works properly', {
   testthat::expect_equal(colnames(SummarizedExperiment::rowData(DR_subs)),
                          colnames(SummarizedExperiment::rowData(DR_orig)))
 })
+
+testthat::test_that('fetchData works properly', {
+  sample_feats <- c('PC1', 'PC2', 'color', 'feat1', 'feat2')
+  sample_data_fetched <- fetchData(SEDR2, sample_feats, redDimKeys = 'PCA_assay1', assayKey = 'assay1')
+  PC_embeddings_ref <- as.data.frame(t(getEmbeddings(SEDR2, 'PCA_assay1')))
+  col_data_ref <- as.data.frame(SummarizedExperiment::colData(getSummExp(SEDR2)))
+  feat_ref <- as.data.frame(t(SummarizedExperiment::assay(getSummExp(SEDR2), 'assay1')))
+  # rownames(PC_embeddings_ref) <- rownames(feat_ref) <- rownames(col_data_ref)
+  testthat::expect_equal(colnames(sample_data_fetched), sample_feats)
+  testthat::expect_equal(sample_data_fetched[,c('PC1', 'PC2')], PC_embeddings_ref[,c('PC1', 'PC2')])
+  testthat::expect_equal(sample_data_fetched[,'color'], col_data_ref[,'color'])
+  testthat::expect_equal(sample_data_fetched[,c('feat1', 'feat2')], feat_ref[,c('feat1', 'feat2')])
+
+  feat_attrs <- c('PC1', 'PC2', 'texture')
+  loadings_ref <- as.data.frame(t(getLoadings(SEDR2, key = 'PCA_assay1')))
+  row_data_fetched <- fetchData(SEDR2, feat_attrs, redDimKeys = 'PCA_assay1', mode = 'feature_wise')
+  testthat::expect_equal(row_data_fetched[,c('PC1', 'PC2')], loadings_ref[,c('PC1', 'PC2')])
+  row_data_ref <- as.data.frame(SummarizedExperiment::rowData(getSummExp(SEDR2)))
+  testthat::expect_equal(row_data_fetched[,'texture'], row_data_ref[,'texture'])
+})
