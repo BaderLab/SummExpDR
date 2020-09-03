@@ -87,6 +87,7 @@ setMethod('setReducedDims',
 #' Row Data
 #' @param x SummExpDR object
 #' @value rowData from Summ Exp DR object
+#' @export
 setGeneric('rowData', function(x) standardGeneric('rowData'))
 
 setMethod('rowData',
@@ -95,9 +96,37 @@ setMethod('rowData',
             return(SummarizedExperiment::rowData(getSummExp(x)))
           })
 
+#' add rowData
+#' @param x
+#' @param value DataFrame or coercible thereof, or vector. if vector, col_name must be specified
+#' @param col_name
+#' @value SummExpDR object with rowData updated
+#' @export
+
+setGeneric('addRowData', function(x, value, col_name = NULL) standardGeneric('addRowData'))
+
+setMethod('addRowData',
+          signature = 'SummExpDR',
+          function(x, value, col_name = NULL) {
+            if (is.vector(x)) {
+              if (is.null(col_name)) {
+                stop('col_name must not be null if value is a vector')
+              }
+              value <- S4Vectors::DataFrame(x = value)
+              colnames(value) <- col_name
+            }
+            row_data <- SummarizedExperiment::rowData(x@summ_exp)
+            for (v in colnames(value)) {
+              row_data <- replace_col(row_data, v, value[[v]], suffix = 'orig', remove_existing = TRUE)
+            }
+            SummarizedExperiment::rowData(x@summ_exp) <- col_data
+            return(x)
+          })
+
 #' Col Data
 #' @param x SummExpDR object
 #' @value rowData from Summ Exp DR object
+#' @export
 setGeneric('colData', function(x) standardGeneric('colData'))
 
 setMethod('colData',
@@ -106,11 +135,40 @@ setMethod('colData',
             return(SummarizedExperiment::colData(getSummExp(x)))
           })
 
+
+#' add colData
+#' @param x
+#' @param value DataFrame or coercible thereof, or vector. if vector, col_name must be specified
+#' @param col_name
+#' @value SummExpDR object with colData updated
+#' @export
+
+setGeneric('addColData', function(x, value, col_name = NULL) standardGeneric('addColData'))
+
+setMethod('addColData',
+          signature = 'SummExpDR',
+          function(x, value, col_name = NULL) {
+            if (is.vector(x)) {
+              if (is.null(col_name)) {
+                stop('col_name must not be null if value is a vector')
+              }
+              value <- S4Vectors::DataFrame(x = value)
+              colnames(value) <- col_name
+            }
+            col_data <- SummarizedExperiment::colData(x@summ_exp)
+            for (v in colnames(value)) {
+              col_data <- replace_col(col_data, v, value[[v]], suffix = 'orig', remove_existing = TRUE)
+            }
+            SummarizedExperiment::colData(x@summ_exp) <- col_data
+            return(x)
+          })
+
 #' Subset Data
 #' @param x SummExpDR object
 #' @param rows
 #' @param cols
 #' @value subsetted SummExpDR object for given rows (features) and cols (samples)
+#' @export
 setGeneric('subsetData', function(x, rows, cols) standardGeneric('subsetData'))
 
 setMethod('subsetData',
@@ -146,12 +204,41 @@ setMethod('subsetData',
             return(new_SummExpDR)
           })
 
+#' Show Assays
+#' @param x SummExpDR object
+#' @value assay names
+#' @export
+setGeneric('assays', function(x) standardGeneric('assays'))
+
+setMethod('assays',
+          signature = 'SummExpDR',
+          function(x) {
+            return(SummarizedExperiment::assays(getSummExp(x)))
+          })
+
+#' Get Assay Data
+#' @param x SummExpDR object
+#' @param i assay data to pull
+#' @value assay data
+#' @export
+setGeneric('assay', function(x, i) standardGeneric('assay'))
+
+setMethod('assay',
+          signature = 'SummExpDR',
+          function(x, i) {
+            return(SummarizedExperiment::assay(getSummExp(x), i))
+          })
+
 #' helper function to replace column
-replace_col <- function(DF, col_name, value, suffix) {
+replace_col <- function(DF, col_name, value, suffix, remove_existing = FALSE) {
   if (col_name %in% colnames(DF)) {
-    new_colname <- paste(col_name, suffix, sep = '_')
-    colnames(DF)[grep(paste0('^', col_name, '$'), col_name)] <- new_colname
-    warning(paste(col_name, 'in column names of DF renamed to', new_colname))
+    if (remove_existing) {
+      warning(paste(col_name, 'in column names of DF replaced with new value'))
+    } else {
+      new_colname <- paste(col_name, suffix, sep = '_')
+      colnames(DF)[grep(paste0('^', col_name, '$'), col_name)] <- new_colname
+      warning(paste(col_name, 'in column names of DF renamed to', new_colname))
+    }
   }
   DF[[col_name]] <- value
   return(DF)
@@ -165,6 +252,8 @@ replace_col <- function(DF, col_name, value, suffix) {
 #' @param mode whether to pull data in a sample x feature format or feature x feature_info format
 #' for sample x feature (sample_wises), first pull colData of summ exp object, then join with embeddings from redDimKeys
 #' and with assay data from assay keys. for feature x feat info, pull out rowData, then any loadings for reduced dim keys
+#' @value data.frame with fetched data
+#' @export
 
 setGeneric('fetchData', function(x, varsFetch, redDimKeys = NULL, assayKey = NULL, mode = 'sample_wise') standardGeneric('fetchData'))
 

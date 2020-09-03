@@ -12,7 +12,7 @@ matrix must have the form n features x m samples}
 
 \item{i}{= assay to pull}
 
-\item{suffix}{suffix to add, if SummExpDR. By default it's just \'PCA\'}
+\item{suffix}{suffix to add, if SummExpDR. By default, reduced dim key is just 'PCA', but with suffix added it's 'PCA{suffix}'}
 
 \item{std_norm}{whether to standard normalize data}
 }

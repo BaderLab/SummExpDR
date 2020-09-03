@@ -4,7 +4,7 @@
 \alias{replace_col}
 \title{helper function to replace column}
 \usage{
-replace_col(DF, col_name, value, suffix)
+replace_col(DF, col_name, value, suffix, remove_existing = FALSE)
 }
 \description{
 helper function to replace column

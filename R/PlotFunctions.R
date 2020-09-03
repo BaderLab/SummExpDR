@@ -151,6 +151,7 @@ scatter_plot <- function(df, var1, var2, color_by,
 #' @param assay required if pulling ouot feature values for assay data
 #' @param ... other arguments to scatter_plot, with var1 and var2 overridden by dim1 and dim2
 #' @value ggplot2 object
+#' @export
 
 setGeneric('plotDR', function(x, dim1, dim2, color_by, key, assay = NULL, ...) standardGeneric('plotDR'))
 
@@ -170,6 +171,7 @@ setMethod('plotDR',
 #' @inheritParams varianceExplained
 #' @param dims_use dims to plot. if NULL plot all
 #' @value ggplot2 object
+#' @export
 
 setGeneric('screePlot', function(x, key, feats_use = NULL, dims_use = NULL) standardGeneric('screePlot'))
 
