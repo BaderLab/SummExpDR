@@ -3,11 +3,11 @@ set.seed(42L)
 # 100 x 100 matrix
 data1 <- matrix(c(rnorm(9000), rnorm(1000, 3)), nrow = 100)
 rownames(data1) <- paste0('data1_', 1:nrow(data1))
-colnames(data1) <- as.character(1:ncol(data1))
+colnames(data1) <- paste0('sample_', as.character(1:ncol(data1)))
 # 60 x 200 matrix
 data2 <- matrix(c(rnorm(2400, 5, 2), rnorm(9600, 2, 5)), nrow = 60)
 rownames(data2) <- paste0('data2_', 1:nrow(data2))
-colnames(data2) <- as.character(51:250)
+colnames(data2) <- paste0('sample_', as.character(51:250))
 # 50 samples (columns) shared between matrices
 
 colData1 <- S4Vectors::DataFrame(SampleID = colnames(data1))
@@ -41,7 +41,7 @@ testthat::test_that('multiExp data imputation produces expected output', {
   testthat::expect_equal(sum(is.na(imputed_data)), 0)
   is_imputed <- SummarizedExperiment::assay(summ_exp, 'is_imputed')
   testthat::expect_equal(sum(is_imputed), expect_na)
-  testthat::expect_lt(abs(mean(imputed_data[101:160,as.character(1:50)]) - 5), 1)
+  testthat::expect_lt(abs(mean(imputed_data[101:160,colnames(data1)[1:50]]) - 5), 1)
 })
 
 testthat::test_that('data scaling works properly', {

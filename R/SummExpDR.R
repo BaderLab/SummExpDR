@@ -20,14 +20,15 @@ setClass('SummExpDR', representation = list('summ_exp' = 'SummarizedExperiment',
 # Create Object ---------------------------------------------------------------
 
 check_rownames_colnames <- function(x) {
-  dash_regex <- '(-| )'
-  if (any(grepl(dash_regex, rownames(x)))) {
-    warning('renaming rownames to get rid of dashes')
-    rownames(x) <- gsub(dash_regex, '_', rownames(x))
+  orig_rownames <- rownames(x)
+  orig_colnames <- colnames(x)
+  rownames(x) <- make.names(orig_rownames)
+  colnames(x) <- make.names(orig_colnames)
+  if (!all(rownames(x) == orig_rownames)) {
+    warning('some or all rownames in input were changed as they had spaces or disallowed symbols')
   }
-  if (any(grepl(dash_regex, colnames(x)))) {
-    warning('renaming colnames to get rid of dashes')
-    colnames(x) <- gsub(dash_regex, '_', colnames(x))
+  if (!all(colnames(x) == orig_colnames)) {
+    warning('some or all colnames in input were changed as they had spaces or disallowed symbols')
   }
   return(x)
 }
