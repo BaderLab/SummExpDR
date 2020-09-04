@@ -1,6 +1,42 @@
 ###############################################################################
 ## Plotting Utilities
 
+filter_df <- function(df, filter_by = NULL, filter_class = NULL) {
+  ## filter by value for a particular class
+  ## INPUTS:
+  ##    df = data.frame
+  ##    filter_by = NULL or string denoting class by which data is to be subsetted
+  ##    filter_class = set of valid classes in filter_by categorical variable to use in subset
+  ##    Note that if filter_by is set to NULL, no filtering is done
+  ##    If filter_class is left unspecified and filter_by is specified as a valid column name,
+  ##    an error will be thrown
+  ## RETURNS:
+  ##  either the same data.frame or if valid non-NULL arguments provided to filter_by and
+  ##  filter_class, a subset of that data consisting of all members of the valid classes
+  ##  specified in filter_class
+  if (is.character(filter_by)) {
+    if (is.character(filter_class)) {
+      filter_vect <- df[,filter_by]
+      if (is.numeric(filter_vect)) {
+        warning('specified filter feature is of numeric value, coercing to character')
+      }
+      filter_vect <- as.character(filter_vect)
+      if (all(filter_class %in% filter_vect)) {
+        valid_cell_inds <- filter_vect %in% filter_class
+        df <- df[which(valid_cell_inds),]
+      } else {
+        stop('Not all specified classes are present in the specified filter_by column')
+      }
+    } else {
+      warning('filter_class left unspecified, continuing to plot without filtering data')
+    }
+  } else if (!is.null(filter_by)) {
+    warning('filter_by must be specified as string (character vector of length 1) if non-NULL\
+    in order to filter. Ignoring argument')
+  }
+  return(df)
+}
+
 get_lims <- function(x) {
   ## Get axis limits for a set of points
   ## INPUTS:
@@ -9,6 +45,14 @@ get_lims <- function(x) {
   range_x <- max(x) - min(x)
   buff <- 0.05*range_x
   return(c(min(x) - buff, max(x) + buff))
+}
+
+discrete_color_mapping <- function(categorical_vals) {
+  unique_vals <- unique(categorical_vals)
+  unique_vals <- unique_vals[order(unique_vals)]
+  col_map <- scales::hue_pal()(length(unique_vals))
+  names(col_map) <- unique_vals
+  return(col_map)
 }
 
 #' generic scatterplot function for data frame
@@ -73,10 +117,10 @@ scatter_plot <- function(df, var1, var2, color_by,
     discrete_col_mapping <- discrete_color_mapping(df[,color_by])
     # filter data as desired after getting appropriate color mapping
     df <- filter_df(df = df, filter_by = filter_by, filter_class = filter_class)
-    p <- ggplot(data = df, mapping = aes_(x = as.name(var1), y = as.name(var2))) +
-      geom_point(aes_(color = as.name(color_by)), size = pt.size, alpha = alpha, pch = pt.shape)
-    p <- p + scale_color_manual(values = discrete_col_mapping)
-    p <- p + guides(colour = guide_legend(override.aes = list(size=legend_pt_size,
+    p <- ggplot2::ggplot(data = df, mapping = ggplot2::aes_(x = as.name(var1), y = as.name(var2))) +
+      ggplot2::geom_point(aes_(color = as.name(color_by)), size = pt.size, alpha = alpha, pch = pt.shape)
+    p <- p + ggplot2::scale_color_manual(values = discrete_col_mapping)
+    p <- p + ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(size=legend_pt_size,
                                                               shape=legend_pt_shape),
                                           title = ifelse(legend_title, color_by, '')))
   } else {
@@ -113,32 +157,32 @@ scatter_plot <- function(df, var1, var2, color_by,
     # filter data as desired after deciding appropriate color mapping
     df <- filter_df(df = df, filter_by = filter_by, filter_class = filter_class)
     # do the plot
-    p <- ggplot(data = df, mapping = aes_(x = as.name(var1), y = as.name(var2)))
+    p <- ggplot2::ggplot(data = df, mapping = ggplot2::aes_(x = as.name(var1), y = as.name(var2)))
     if (zero_center) {
-      p <- p + geom_point(aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
+      p <- p + ggplot2::geom_point(ggplot2::aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
       # p <- p + geom_point(aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
       # p <- p + scale_color_gradient2(midpoint = 0, limits = c(min_val, max_val), low = 'turquoise', mid = 'white', high = 'orange')
-      p <- p + scale_color_gradient2(midpoint = 0, low = 'blue', mid = 'darkgrey', high = 'red')
+      p <- p + ggplot2::scale_color_gradient2(midpoint = 0, low = 'blue', mid = 'darkgrey', high = 'red')
       # p <- p + theme_dark()
-      p <- p + theme_light()
+      p <- p + ggplot2::theme_light()
     } else {
-      p <- p + geom_point(aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
+      p <- p + ggplot2::geom_point(ggplot2::aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
       # p <- p + scale_color_gradient2(low = 'turquoise', mid = 'white', high = 'orange',
       #                                midpoint = mean(df$color_vals),
       #                                limits = c(min_val, max_val))
-      p <- p + scale_color_gradient2(low = 'darkblue', mid = 'darkgrey', high = 'red', midpoint = mean(df$color_vals))
+      p <- p + ggplot2::scale_color_gradient2(low = 'darkblue', mid = 'darkgrey', high = 'red', midpoint = mean(df$color_vals))
       # p <- p + theme_dark()
-      p <- p + theme_light()
+      p <- p + ggplot2::theme_light()
     }
     if (!legend_title) {
-      p <- p + guides(color = guide_colorbar(title = NULL))
+      p <- p + ggplot2::guides(color = guide_colorbar(title = NULL))
     } else {
-      p <- p + guides(color = guide_colorbar(title = color_by))
+      p <- p + ggplot2::guides(color = guide_colorbar(title = color_by))
     }
     # p <- p + scale_color_gradientn(colors = continuous_colors, breaks = continuous_breaks)
 
   }
-  p <- p + coord_cartesian(xlim = xlim, ylim = ylim)
+  p <- p + ggplot2::coord_cartesian(xlim = xlim, ylim = ylim)
   return(p)
 }
 
@@ -160,9 +204,9 @@ setMethod('plotDR',
           function(x, dim1, dim2, color_by, key, assay = NULL, ...) {
             vars_fetch <- c(dim1, dim2, color_by)
             fetched_data <- fetchData(x, varsFetch = vars_fetch, assayKey = assay, redDimKeys = key, mode = 'sample_wise')
-            # renaming is to avoid weird erros when inputs have same name as arguments in functiton
+            # renaming is to avoid weird errors when inputs have same name as arguments in functiton
             col <- color_by
-            p <- scatter_plot(var1 = dim1, var2 = dim2, color_by = col, ...)
+            p <- scatter_plot(fetched_data, var1 = dim1, var2 = dim2, color_by = col, ...)
             return(p)
           })
 
@@ -178,10 +222,12 @@ setGeneric('screePlot', function(x, key, feats_use = NULL, dims_use = NULL) stan
 setMethod('screePlot',
           signature = 'SummExpDR',
           function(x, key, feats_use = NULL, dims_use = NULL) {
-            var_expl <- varianceExplained(x, key, NULL, feats_use)$r2_by_dim[dims_use]
-            plot_df <- data.frame(dim = names(var_expl), pct_var = var_expl)
-            p <- ggplot(data = plot_df, mapping = aes(dim, pct_var)) + geom_line(color = 'blue') +
-              geom_point(size = 4.0)
+            var_expl <- varianceExplained(x, key, dims_use, feats_use)$r2_by_dim
+            plot_df <- data.frame(dim = names(var_expl), pct_var = var_expl, index = 1:length(var_expl))
+            p <- ggplot2::ggplot(data = plot_df, mapping = aes(index, pct_var)) + ggplot2::geom_line(color = 'blue') +
+              ggplot2::geom_point(size = 4.0, color = 'blue') + ggplot2::ggtitle(key) +
+              ggplot2::xlab('Dimension') + ggplot2::ylab('% Variance Explained') +
+              ggplot2::scale_x_continuous(breaks = plot_df$index)
             return(p)
           })
 

@@ -123,7 +123,7 @@ setGeneric('addRowData', function(x, value, col_name = NULL) standardGeneric('ad
 setMethod('addRowData',
           signature = 'SummExpDR',
           function(x, value, col_name = NULL) {
-            if (is.vector(x)) {
+            if (is.vector(value)) {
               if (is.null(col_name)) {
                 stop('col_name must not be null if value is a vector')
               }
@@ -163,7 +163,7 @@ setGeneric('addColData', function(x, value, col_name = NULL) standardGeneric('ad
 setMethod('addColData',
           signature = 'SummExpDR',
           function(x, value, col_name = NULL) {
-            if (is.vector(x)) {
+            if (is.vector(value)) {
               if (is.null(col_name)) {
                 stop('col_name must not be null if value is a vector')
               }
