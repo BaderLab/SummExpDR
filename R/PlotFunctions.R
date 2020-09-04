@@ -183,6 +183,7 @@ scatter_plot <- function(df, var1, var2, color_by,
 
   }
   p <- p + ggplot2::coord_cartesian(xlim = xlim, ylim = ylim)
+  p <- p + ggplot2::ggtitle(color_by)
   return(p)
 }
 

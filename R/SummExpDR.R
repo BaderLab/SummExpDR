@@ -127,12 +127,23 @@ setMethod('addRowData',
               if (is.null(col_name)) {
                 stop('col_name must not be null if value is a vector')
               }
-              value <- S4Vectors::DataFrame(x = value)
+              if (is.null(names(value))) {
+                stop('vector input for value must have bames')
+              }
+              value <- S4Vectors::DataFrame(x = value, row.names = names(value))
               colnames(value) <- col_name
             }
             row_data <- SummarizedExperiment::rowData(x@summ_exp)
+            missing_names_rowdata <- setdiff(rownames(row_data), rownames(value))
+            missing_names_value <- setdiff(rownames(value), rownames(row_data))
+            if (length(missing_names_rowdata) > 0) {
+              warning(paste(length(missing_names_rowdata) , 'rownames in rowdata not represented in value argument'))
+            }
+            if (length(missing_names_value) > 0) {
+              warning(paste(length(missing_names_value) , 'rownames/names in value not represented in rowdata'))
+            }
             for (v in colnames(value)) {
-              row_data <- replace_col(row_data, v, value[[v]], suffix = 'orig', remove_existing = TRUE)
+              row_data <- replace_col(row_data, v, value[rownames(row_data),v], suffix = 'orig', remove_existing = TRUE)
             }
             SummarizedExperiment::rowData(x@summ_exp) <- col_data
             return(x)
@@ -167,12 +178,23 @@ setMethod('addColData',
               if (is.null(col_name)) {
                 stop('col_name must not be null if value is a vector')
               }
-              value <- S4Vectors::DataFrame(x = value)
+              if (is.null(names(value))) {
+                stop('vector input for value must have bames')
+              }
+              value <- S4Vectors::DataFrame(x = value, row.names = names(value))
               colnames(value) <- col_name
             }
             col_data <- SummarizedExperiment::colData(x@summ_exp)
+            missing_names_coldata <- setdiff(rownames(col_data), rownames(value))
+            missing_names_value <- setdiff(rownames(value), rownames(col_data))
+            if (length(missing_names_coldata) > 0) {
+              warning(paste(length(missing_names_coldata) , 'rownames in coldata not represented in value argument'))
+            }
+            if (length(missing_names_value) > 0) {
+              warning(paste(length(missing_names_value) , 'rownames/names in value not represented in coldata'))
+            }
             for (v in colnames(value)) {
-              col_data <- replace_col(col_data, v, value[[v]], suffix = 'orig', remove_existing = TRUE)
+              col_data <- replace_col(col_data, v, value[rownames(col_data),v], suffix = 'orig', remove_existing = TRUE)
             }
             SummarizedExperiment::colData(x@summ_exp) <- col_data
             return(x)

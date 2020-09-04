@@ -8,6 +8,7 @@
 #' @param genesets named list of genesets to pass to GSVA::gsva
 #' @param expt_use experiment to use if this is a multiExp object
 #' @value return a SummarizedExperiment, SummExpDR, or multiExp object with colData updated with gsva scores
+#' @export
 
 setGeneric('run_gsva', function(x, assay, genesets, expt_use = NULL, ...) standardGeneric('run_gsva'))
 
@@ -46,7 +47,7 @@ setMethod('run_gsva',
             rownames(summ_exp_subs) <- name_mapping
             exp_data <- SummarizedExperiment::assay(summ_exp_subs, assay)
             gsva_scores <- GSVA::gsva(exp_data, gset.idx.list = genesets, ...)
-            rownames(gsva_scores) <- paste(rownames(gsva_scores), expt, sep = '_')
+            rownames(gsva_scores) <- paste(rownames(gsva_scores), expt_use, sep = '_')
             SummarizedExperiment::colData(summ_exp) <- cbind(SummarizedExperiment::colData(summ_exp),
                                                       S4Vectors::DataFrame(t(gsva_scores)[colnames(summ_exp), ]))
             x@summ_exp <- summ_exp
