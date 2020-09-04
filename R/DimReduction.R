@@ -162,6 +162,7 @@ create_FactorizedDR <- function(assays, ...) {
 #' all features. Essentially you subset the data matrix and the reconstructed data matrix for the selected features,
 #' then compute r-squared to compare those subset matrices.
 #' @value returns list with variance explained per dimension as well as total variance explained by dimensions selected
+#' @export
 
 setGeneric('varianceExplained',  function(x, key, dims_use = NULL, feats_use = NULL) standardGeneric("varianceExplained"))
 
