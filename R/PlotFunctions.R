@@ -159,7 +159,7 @@ setMethod('plotDR',
           signature = 'SummExpDR',
           function(x, dim1, dim2, color_by, key, assay = NULL, ...) {
             vars_fetch <- c(dim1, dim2, color_by)
-            fetched_data <- fetchData(x, varsFetch = vars_fetch, assayKey = assay, redDimKeys = key, mode = 'samplewise')
+            fetched_data <- fetchData(x, varsFetch = vars_fetch, assayKey = assay, redDimKeys = key, mode = 'sample_wise')
             # renaming is to avoid weird erros when inputs have same name as arguments in functiton
             col <- color_by
             p <- scatter_plot(var1 = dim1, var2 = dim2, color_by = col, ...)

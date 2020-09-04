@@ -58,7 +58,7 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
  feature_key <- S4Vectors::DataFrame(expt = character(0), orig_id = character(0), converted = character(0))
 
   for (i in 1:length(summ_exp_list)) {
-    summ_exp_i <- summ_exp_list[[i]]
+    summ_exp_i <- check_rownames_colnames(summ_exp_list[[i]])
     # rename features
     expt_name_i <- expt_names[i]
     orig_names <- rownames(summ_exp_i)
