@@ -22,9 +22,10 @@ row_data2 <- S4Vectors::DataFrame(data.frame(texture = sample(c('soft', 'medium'
 se2 <- SummarizedExperiment::SummarizedExperiment(assays = list(assay1 = data_mat2), rowData = row_data2, colData = col_data2)
 SEDR2 <- create_SummExpDR(se2)
 SEDR2 <- runPCA(SEDR2, 'assay1', '_assay1')
-pca_ref <- prcomp(t(SummarizedExperiment::assay(se2, 'assay1')), scale. = TRUE, center = TRUE)
+
 
 testthat::test_that('runPCA works', {
+  pca_ref <- prcomp(t(SummarizedExperiment::assay(se2, 'assay1')), scale. = TRUE, center = TRUE)
   reduced_dims <- getReducedDims(SEDR2, key = 'PCA_assay1')
   loadings_mat <- getLoadings(reduced_dims)
   coords_mat <- getEmbeddings(reduced_dims)
@@ -37,12 +38,39 @@ testthat::test_that('runPCA works', {
 
 testthat::test_that('varianceExplained works', {
   # in this case calculating variance explained by first 3 PCs
+  pca_ref <- prcomp(t(SummarizedExperiment::assay(se2, 'assay1')), scale. = TRUE, center = TRUE)
   dims_use <- 1:3
   var_expl_res <- varianceExplained(SEDR2, key = 'PCA_assay1', dims_use = dims_use)
   total_var_ref <- sum(pca_ref$sdev^2)
   r2_dim_ref <- (pca_ref$sdev^2)[dims_use]/total_var_ref
   r2_total_ref <- sum((pca_ref$sdev^2)[dims_use])/total_var_ref
   names(r2_dim_ref) <- paste0('PC', dims_use)
+  testthat::expect_equal(var_expl_res$r2_by_dim, r2_dim_ref)
+  testthat::expect_equal(var_expl_res$r2_all, r2_total_ref)
+})
+
+testthat::test_that('varianceExplained works with subset of features', {
+  # in this case calculating variance explained by first 3 PCs
+  dims_use <- 1:3
+  feats_use <- paste0('feat', 1:10)
+  var_expl_res <- varianceExplained(SEDR2, key = 'PCA_assay1', dims_use = dims_use, feats_use = feats_use)
+  loadings_mat <- getLoadings(SEDR2, key = 'PCA_assay1')
+  embeddings_mat <- t(getEmbeddings(SEDR2, key = 'PCA_assay1'))
+  assay_mat <- t(assay(SEDR2, 'assay1_std_norm'))[,feats_use]
+  mean_mat <- matrix(rep(matrixStats::colMeans2(assay_mat), nrow(assay_mat)), nrow = nrow(assay_mat), byrow = TRUE)
+  center_mat <- assay_mat - mean_mat
+  total_var <- sum((center_mat)^2)
+  reconst <- embeddings_mat[rownames(assay_mat), dims_use] %*% loadings_mat[dims_use , feats_use]
+  error <- sum((assay_mat - reconst)^2)
+  r2_total_ref <- 1 - (error/total_var)
+
+  r2_dim_ref <- numeric(length(dims_use))
+  names(r2_dim_ref) <- colnames(embeddings_mat[,dims_use])
+  for (k in dims_use) {
+    reconst <- embeddings_mat[rownames(assay_mat), k, drop = FALSE] %*% loadings_mat[k , feats_use, drop = FALSE]
+    error <- sum((assay_mat - reconst)^2)
+    r2_dim_ref[k] <- 1 - error/total_var
+  }
   testthat::expect_equal(var_expl_res$r2_by_dim, r2_dim_ref)
   testthat::expect_equal(var_expl_res$r2_all, r2_total_ref)
 })

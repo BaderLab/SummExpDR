@@ -174,9 +174,7 @@ setMethod('varianceExplained',
             # get input data used for this dim reduction
             input_data_SE <- getSummExp(x)
             input_data <- t(SummarizedExperiment::assay(input_data_SE, assay_used))
-            mean_mat <- matrixStats::colMeans2(input_data)
-            centered_mat <- input_data - mean_mat
-            total_var = sum(centered_mat^2)
+
             # loadings matrix in in p dimensions x n features format
             loadings_mat <- getLoadings(FactorizedDR)
             tryCatch(stopifnot(all(colnames(loadings_mat) == colnames(input_data))),
@@ -197,14 +195,24 @@ setMethod('varianceExplained',
 
             # determine features to use
             if (is.null(feats_use)) {
-              feats_use <- 1:ncol(input_data)
+              feats_use <- colnames(input_data)[1:ncol(input_data)]
+            } else if (is.integer(feats_use)) {
+              feats_use <- colnames(input_data)[feats_use]
             }
+            input_data <- input_data[,feats_use]
+            # calculate total var
+            mean_mat <- matrixStats::colMeans2(input_data)
+            centered_mat <- input_data - mean_mat
+            total_var = sum(centered_mat^2)
+
+            # subset loadings mat
+            loadings_mat <- loadings_mat[ , feats_use]
 
             # calculate variance explained per each individual dim
             for (d in dims_use) {
               # TODO: make separate function fo reconstructing data, separate for calculating r-squared
-              reconst_d <- embeddings_mat[,d, drop = FALSE] %*% loadings_mat[d, , drop = FALSE]
-              resid_d <- input_data[,feats_use] - reconst_d[,feats_use]
+              reconst_d <- embeddings_mat[rownames(input_data), d, drop = FALSE] %*% loadings_mat[d, , drop = FALSE]
+              resid_d <- input_data - reconst_d
               r2_d <- 1 - sum(resid_d^2)/total_var
               if (r2_d < 0) {
                 # floor r2 at 0. while r2 can be negative, can't have lower than 0% of variance in data explained
@@ -213,8 +221,8 @@ setMethod('varianceExplained',
               var_by_dim[d] <- r2_d
             }
             # calculate total variance explained by dims picked
-            reconst_all <- embeddings_mat[,dims_use, drop = FALSE] %*% loadings_mat[dims_use, , drop = FALSE]
-            resid_all <- input_data[,feats_use] - reconst_all[,feats_use]
+            reconst_all <- embeddings_mat[rownames(input_data), dims_use, drop = FALSE] %*% loadings_mat[dims_use, , drop = FALSE]
+            resid_all <- input_data - reconst_all
             r2_all <- 1 - sum(resid_all^2)/total_var
             if (r2_all < 0) {
               r2_all <- 0
