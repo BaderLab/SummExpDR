@@ -23,11 +23,11 @@ check_rownames_colnames <- function(x) {
   dash_regex <- '(-| )'
   if (any(grepl(dash_regex, rownames(x)))) {
     warning('renaming rownames to get rid of dashes')
-    rownames(x) <- sub(dash_regex, '_', rownames(x))
+    rownames(x) <- gsub(dash_regex, '_', rownames(x))
   }
   if (any(grepl(dash_regex, colnames(x)))) {
     warning('renaming colnames to get rid of dashes')
-    colnames(x) <- sub(dash_regex, '_', colnames(x))
+    colnames(x) <- gsub(dash_regex, '_', colnames(x))
   }
   return(x)
 }
