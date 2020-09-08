@@ -20,15 +20,20 @@ setClass('SummExpDR', representation = list('summ_exp' = 'SummarizedExperiment',
 # Create Object ---------------------------------------------------------------
 
 check_rownames_colnames <- function(x) {
+  stopifnot(is(x, 'SummarizedExperiment'))
   orig_rownames <- rownames(x)
   orig_colnames <- colnames(x)
   rownames(x) <- make.names(orig_rownames)
   colnames(x) <- make.names(orig_colnames)
   if (!all(rownames(x) == orig_rownames)) {
     warning('some or all rownames in input were changed as they had spaces or disallowed symbols')
+    SummarizedExperiment::rowData(x) <- replace_col(SummarizedExperiment::rowData(x),
+                                                    col_name = 'raw_rownames', value = orig_rownames)
   }
   if (!all(colnames(x) == orig_colnames)) {
     warning('some or all colnames in input were changed as they had spaces or disallowed symbols')
+    SummarizedExperiment::colData(x) <- replace_col(SummarizedExperiment::colData(x),
+                                                    col_name = 'raw_colnames', value = orig_colnames)
   }
   return(x)
 }
