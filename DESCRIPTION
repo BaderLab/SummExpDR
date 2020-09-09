@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.0014
+Version: 0.1.0016
 Author: Owen Whitley
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
@@ -12,6 +12,7 @@ LazyData: true
 Suggests:
   testthat
 Imports:
+  BiocParallel,
   dplyr,
   ggplot2,
   GSVA,
@@ -24,6 +25,7 @@ Imports:
   SummarizedExperiment
 RoxygenNote: 7.0.2
 Collate: 
+    'Correlation.R'
     'SummExpDR.R'
     'DimReduction.R'
     'Imputation.R'
