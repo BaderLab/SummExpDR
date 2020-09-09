@@ -55,8 +55,7 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
     })
   }
 
- feature_key <- S4Vectors::DataFrame(expt = character(0), orig_id = character(0), converted = character(0))
-
+  feature_key <- S4Vectors::DataFrame(expt = character(0), orig_id = character(0), raw_rownames = character(0), converted = character(0))
   for (i in 1:length(summ_exp_list)) {
     summ_exp_i <- check_rownames_colnames(summ_exp_list[[i]])
     # rename features
@@ -65,10 +64,14 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
     new_names <- paste(expt_name_i, orig_names, sep = '_')
     rownames(summ_exp_i) <- new_names
     # save name mapping between original feature names and new feature names.
-    # this is added to row data
+    # this is added to row data. also keep raw rownames here, as joining rowdata
+    # by feature id results in duplicate column. for coldata, we don't do this.
     feature_key_i <- S4Vectors::DataFrame(expt = rep(expt_name_i, nrow(summ_exp_i)),
                                           orig_id = orig_names,
+                                          raw_rownames = SummarizedExperiment::rowData(summ_exp_i)[['raw_rownames']],
                                           converted = new_names)
+    SummarizedExperiment::rowData(summ_exp_i)$raw_rownames <- NULL
+    # SummarizedExperiment::colData(summ_exp_i)$raw_colnames <- NULL
     rownames(feature_key_i) <- new_names
     assay_i <- assays_use[[i]]
     assay_mat_i <- SummarizedExperiment::assay(summ_exp_i, assay_i)
@@ -123,16 +126,15 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
     # num_features[expt_name_i] <- nrow(assay_mat_i)
   }
   rownames(feature_key) <- feature_key$converted
-  for (col_name in c('expt', 'orig_id')) {
+  for (col_name in c('expt', 'orig_id', 'raw_rownames')) {
     row_data <- replace_col(row_data, col_name, as.vector(feature_key[rownames(row_data), col_name]), suffix = paste0('_orig'))
   }
   new_mat <- new_mat[ , sort(colnames(new_mat))]
   col_data <- col_data[sort(rownames(col_data)), ]
   new_summ_exp <- SummarizedExperiment::SummarizedExperiment(assays = list(stacked = new_mat), rowData = row_data, colData = col_data)
-  newSummExpDR <- create_SummExpDR(new_summ_exp)
   newMultiExp <- new('multiExp',
-                     summ_exp = newSummExpDR@summ_exp,
-                     reducedDims = newSummExpDR@reducedDims)
+                     summ_exp = new_summ_exp,
+                     reducedDims = list())
   return(newMultiExp)
 }
 

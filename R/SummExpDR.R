@@ -27,14 +27,20 @@ check_rownames_colnames <- function(x) {
   colnames(x) <- make.names(orig_colnames)
   if (!all(rownames(x) == orig_rownames)) {
     warning('some or all rownames in input were changed as they had spaces or disallowed symbols')
-    SummarizedExperiment::rowData(x) <- replace_col(SummarizedExperiment::rowData(x),
-                                                    col_name = 'raw_rownames', value = orig_rownames)
+    row_replace <- orig_rownames
+  } else {
+    row_replace <- rep(NA, nrow(x))
   }
+  SummarizedExperiment::rowData(x) <- replace_col(SummarizedExperiment::rowData(x),
+                                                  col_name = 'raw_rownames', value = row_replace, suffix = 'orig')
   if (!all(colnames(x) == orig_colnames)) {
     warning('some or all colnames in input were changed as they had spaces or disallowed symbols')
-    SummarizedExperiment::colData(x) <- replace_col(SummarizedExperiment::colData(x),
-                                                    col_name = 'raw_colnames', value = orig_colnames)
+    col_replace <- orig_colnames
+  } else {
+    col_replace <- rep(NA, ncol(x))
   }
+  SummarizedExperiment::colData(x) <- replace_col(SummarizedExperiment::colData(x),
+                                                  col_name = 'raw_colnames', value = col_replace, suffix = 'orig')
   return(x)
 }
 
@@ -235,15 +241,15 @@ setMethod('subsetData',
               stop('cols must be specified as character or integer')
             }
             summ_exp <- summ_exp[rows, cols]
-            new_SummExpDR <- create_SummExpDR(summ_exp)
+            x@summ_exp <- summ_exp
 
             for (k in dr_keys) {
               # note that features used to calculate reduced dims, found in
               # rowdata of FactorizedDR objects, are not subsetted
               reduced_dims_k <- getReducedDims(x, k)[,cols]
-              new_SummExpDR <- setReducedDims(new_SummExpDR, k, reduced_dims_k)
+              x <- setReducedDims(x, k, reduced_dims_k)
             }
-            return(new_SummExpDR)
+            return(x)
           })
 
 #' Show Assays
