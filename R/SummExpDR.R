@@ -326,10 +326,10 @@ setMethod('fetchData',
                   embeddings_k <- as.data.frame(t(getEmbeddings(red_dim_list[[k]])))
                   embeddings_k <- replace_col(embeddings_k, col_name = 'row_names',
                                               value = rownames(embeddings_k), suffix = k)
-                  tryCatch({stopifnot(any(varsFetch %in% colnames(embeddings_k)))},
-                           error = function(e) {
-                             stop('no variables specified found in selected reduced dims\' embeddings')
-                           })
+                  # tryCatch({stopifnot(any(varsFetch %in% colnames(embeddings_k)))},
+                  #          error = function(e) {
+                  #            stop('no variables specified found in selected reduced dims\' embeddings')
+                  #          })
                   data_fetched <- dplyr::left_join(data_fetched, embeddings_k, by = 'row_names', suffix = c('', k))
                 }
               }
@@ -337,10 +337,10 @@ setMethod('fetchData',
               if (!is.null(assayKey)) {
                 feat_names <- rownames(summ_exp)
                 feats_extract <- intersect(feat_names, varsFetch)
-                tryCatch({stopifnot(length(feats_extract) > 0)},
-                         error = function(e) {
-                           stop('no variables specified found in assay feature names')
-                         })
+                # tryCatch({stopifnot(length(feats_extract) > 0)},
+                #          error = function(e) {
+                #            stop('no variables specified found in assay feature names')
+                #          })
                 assay_data <- as.data.frame(t(SummarizedExperiment::assay(summ_exp, assayKey)))[,feats_extract, drop = FALSE]
                 assay_data <- replace_col(assay_data, col_name = 'row_names',
                                             value = rownames(assay_data), suffix = assayKey)
@@ -356,10 +356,10 @@ setMethod('fetchData',
                   loadings_k <- as.data.frame(t(getLoadings(red_dim_list[[k]])))
                   loadings_k <- replace_col(loadings_k, col_name = 'row_names',
                                               value = rownames(loadings_k), suffix = k)
-                  tryCatch({stopifnot(any(varsFetch %in% colnames(loadings_k)))},
-                           error = function(e) {
-                             stop('no variables specified found in selected reduced dims\' embeddings')
-                           })
+                  # tryCatch({stopifnot(any(varsFetch %in% colnames(loadings_k)))},
+                  #          error = function(e) {
+                  #            stop('no variables specified found in selected reduced dims\' embeddings')
+                  #          })
                   data_fetched <- dplyr::left_join(data_fetched, loadings_k, by = 'row_names', suffix = c('', k))
                 }
               }

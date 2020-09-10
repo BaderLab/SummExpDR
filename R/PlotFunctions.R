@@ -236,6 +236,7 @@ setMethod('screePlot',
 #' 2 variable correlation plot
 #' @inheritParams scatter_plot
 #' @value ggplot2 object
+#' @export
 
 corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
                           filter_by = NULL, filter_class = NULL, pt.size = 1, alpha = 0.4,
@@ -243,11 +244,11 @@ corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
                           xlim = NULL, ylim = NULL, legend_title = TRUE) {
   ## Show correlation of two numeric variables for either a dataframe or seurat object
   ## INPUTS:
-  ##  obj = data.frame
+  ##  df = data.frame
   ##  var1, var2 = variables to plot on x and y axis, respectively
   ##  slot = slot to pull any gene expression data from if input is a Seurat object
   ##  pt_size = point size for plot
-  df_subs <- filter_df(obj, filter_by = filter_by, filter_class = filter_class)
+  df_subs <- filter_df(df, filter_by = filter_by, filter_class = filter_class)
   # calculate correlation
   cor_val <- cor(df_subs[,var1], df_subs[,var2], method = method)
   cor_val <- round(cor_val, 2)
@@ -258,19 +259,19 @@ corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
     cor_pval <- paste0(' = ', signif(cor_pval, 2))
   }
   # make plot
-  p <- scatter_generic(df,
-                       var1 = var1,
-                       var2 = var2,
-                       color_by = color_by,
-                       filter_by = filter_by,
-                       filter_class = filter_class,
-                       pt.size = pt.size,
-                       alpha = alpha,
-                       legend_pt_size = legend_pt_size,
-                       legend_pt_shape = legend_pt_shape,
-                       xlim = xlim,
-                       ylim = ylim,
-                       legend_title = legend_title)
+  p <- scatter_plot(df,
+                   var1 = var1,
+                   var2 = var2,
+                   color_by = color_by,
+                   filter_by = filter_by,
+                   filter_class = filter_class,
+                   pt.size = pt.size,
+                   alpha = alpha,
+                   legend_pt_size = legend_pt_size,
+                   legend_pt_shape = legend_pt_shape,
+                   xlim = xlim,
+                   ylim = ylim,
+                   legend_title = legend_title)
   title_use <- paste(var1, 'vs', var2)
   subtitle_use <- paste(method, 'correlation:', cor_val, '; p', cor_pval)
   p <- p + labs(title = title_use, subtitle = subtitle_use)
@@ -283,6 +284,7 @@ corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
 #' @param feat2 y variable to plot
 #' @param ... other arguments to corplot_2_var
 #' @value ggplot2 object
+#' @export
 
 setGeneric('plotCorrelation',
            function(x, feat1, feat2, color_by, key = NULL, assay = NULL, ...) standardGeneric('plotCorrelation'))

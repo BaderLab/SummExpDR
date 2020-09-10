@@ -90,8 +90,9 @@ setMethod('correlateFeatures',
           signature = 'SummExpDR',
           function(x, features_x, features_y, prune_x = NULL, prune_y = NULL, assayKey = NULL, ...) {
             red_dim_keys <- getReducedDims_keys(x)
-            data_x <- as.matrix(fetchData(x, features_x, red_dim_keys, assayKey))
-            data_y <- as.matrix(fetchData(x, features_y, red_dim_keys, assayKey))
+            data_fetched <- fetchData(x, c(features_x, features_y), red_dim_keys, assayKey)
+            data_x <- as.matrix(data_fetched[,features_x, drop = FALSE])
+            data_y <- as.matrix(data_fetched[,features_y, drop = FALSE])
             if (!is.null(prune_x)) {
               colnames(data_x) <- sub(prune_x, '', colnames(data_x))
             }
