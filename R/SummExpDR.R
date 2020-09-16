@@ -44,6 +44,10 @@ check_rownames_colnames <- function(x) {
   return(x)
 }
 
+#' Create SummExpDR object
+#' @param summ_exp SummarizedExperiment object
+#' @export
+
 create_SummExpDR <- function(summ_exp) {
   # initialize as object with SummarizedExperiment and empty list
   # for reducedDims.

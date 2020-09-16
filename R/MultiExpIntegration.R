@@ -219,3 +219,6 @@ setMethod('scaleExpData',
             SummarizedExperiment::assay(x@summ_exp, 'scaled') <- scaled_data
             return(x)
           })
+
+
+#'
