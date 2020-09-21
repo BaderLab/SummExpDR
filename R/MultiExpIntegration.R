@@ -138,27 +138,32 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
   return(newMultiExp)
 }
 
-setGeneric('getScaleFactors',  function(x, assay) standardGeneric("getScaleFactors"))
+setGeneric('getScaleFactors',  function(x, assay, use_num_feats = TRUE) standardGeneric("getScaleFactors"))
 
 setMethod('getScaleFactors',
           signature = 'multiExp',
-          function(x, assay) {
+          function(x, assay, use_num_feats = TRUE) {
             summ_expt <- getSummExp(x)
             data_mat <- SummarizedExperiment::assay(summ_expt, assay)
-            row_data <- SummarizedExperiment::rowData(summ_expt)
-            unique_expts <- unique(row_data$expt)
-            scale_factors <- c()
-            for (expt_name in unique_expts) {
-              feat_id <- row_data[row_data$expt == expt_name, 'feat_id']
-              scale_factors_expt <- numeric(length(feat_id))
-              names(scale_factors_expt) <- feat_id
-              scale_factors_expt[1:length(scale_factors_expt)] <- apply(data_mat[feat_id,],
-                                                                        MARGIN = 1,
-                                                                        FUN = function(x) {sd(x, na.rm = TRUE)})
-              # scale factor = 1/(sd(feat)*sqrt(# feats in experiment))
-              scale_factors_expt <- 1/(scale_factors_expt*sqrt(length(feat_id)))
-              scale_factors <- c(scale_factors, scale_factors_expt)
+            if (use_num_feats) {
+              row_data <- SummarizedExperiment::rowData(summ_expt)
+              unique_expts <- unique(row_data$expt)
+              scale_factors <- c()
+              for (expt_name in unique_expts) {
+                feat_id <- row_data[row_data$expt == expt_name, 'feat_id']
+                scale_factors_expt <- numeric(length(feat_id))
+                names(scale_factors_expt) <- feat_id
+                scale_factors_expt[1:length(scale_factors_expt)] <- apply(data_mat[feat_id,],
+                                                                          MARGIN = 1,
+                                                                          FUN = function(x) {sd(x, na.rm = TRUE)})
+                # scale factor = 1/(sd(feat)*sqrt(# feats in experiment))
+                scale_factors_expt <- 1/(scale_factors_expt*sqrt(length(feat_id)))
+                scale_factors <- c(scale_factors, scale_factors_expt)
+              }
+            } else {
+              scale_factors <- 1/(apply(data_mat, MARGIN = 1, FUN = function(x) {sd(x, na.rm = TRUE)}))
             }
+
             return(scale_factors)
           })
 
@@ -198,17 +203,18 @@ setMethod('imputeExpData',
 #'
 #' @param x multiExp object
 #' @param assay character, assay to pull out for scaling.
+#' @param use_num_feats whether or not to scale data by square root of number of features in feature's datatype
 #' @value multiExp object with 'scaled' data added
 #' @export
 
-setGeneric('scaleExpData', function(x, assay) standardGeneric('scaleExpData'))
+setGeneric('scaleExpData', function(x, assay, use_num_feats = TRUE) standardGeneric('scaleExpData'))
 
 setMethod('scaleExpData',
           signature = 'multiExp',
-          function(x, assay) {
+          function(x, assay, use_num_feats = TRUE) {
             # standard deviation is same whether it's computed before or after centering data
             # recall that scale factor is 1/(sd * sqrt(feats))
-            scale_factors <- getScaleFactors(x, assay)
+            scale_factors <- getScaleFactors(x, assay, use_num_feats)
             summ_expt <- getSummExp(x)
             data_mat <- SummarizedExperiment::assay(summ_expt, assay)
             data_mat <- t(scale(t(data_mat), scale = FALSE, center = TRUE))
@@ -216,9 +222,12 @@ setMethod('scaleExpData',
                                 nrow = nrow(data_mat),
                                 byrow = FALSE)
             scaled_data <- data_mat*scale_mat
+            if ('scaled' %in% assayNames(x)) {
+              warning('assay \'scaled\' will be replaced by new matrix')
+            }
             SummarizedExperiment::assay(x@summ_exp, 'scaled') <- scaled_data
             return(x)
           })
 
 
-#'
+

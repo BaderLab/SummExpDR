@@ -4,7 +4,7 @@
 \alias{subsetData}
 \title{Subset Data}
 \usage{
-subsetData(x, rows, cols)
+subsetData(x, rows = NULL, cols = NULL)
 }
 \arguments{
 \item{x}{SummExpDR object}

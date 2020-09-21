@@ -221,7 +221,7 @@ setMethod('addColData',
 #' @param cols
 #' @value subsetted SummExpDR object for given rows (features) and cols (samples)
 #' @export
-setGeneric('subsetData', function(x, rows, cols) standardGeneric('subsetData'))
+setGeneric('subsetData', function(x, rows = NULL, cols = NULL) standardGeneric('subsetData'))
 
 setMethod('subsetData',
           'SummExpDR',
@@ -256,9 +256,9 @@ setMethod('subsetData',
             return(x)
           })
 
-#' Show Assays
+#' Get Assays
 #' @param x SummExpDR object
-#' @value assay names
+#' @value list of assays
 #' @export
 setGeneric('assays', function(x) standardGeneric('assays'))
 
@@ -266,6 +266,18 @@ setMethod('assays',
           signature = 'SummExpDR',
           function(x) {
             return(SummarizedExperiment::assays(getSummExp(x)))
+          })
+
+#' Show Assay Names
+#' @param x SummExpDR object
+#' @value vector of assay names
+#' @export
+setGeneric('assayNames', function(x) standardGeneric('assayNames'))
+
+setMethod('assayNames',
+          signature = 'SummExpDR',
+          function(x) {
+            return(SummarizedExperiment::assayNames(getSummExp(x)))
           })
 
 #' Get Assay Data

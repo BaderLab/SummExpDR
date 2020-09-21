@@ -44,7 +44,7 @@ testthat::test_that('multiExp data imputation produces expected output', {
   testthat::expect_lt(abs(mean(imputed_data[101:160,colnames(data1)[1:50]]) - 5), 1)
 })
 
-testthat::test_that('data scaling works properly', {
+testthat::test_that('data scaling works properly, use_num_feats = TRUE', {
   multiExp <- createMultiExp(summ_exp_list = list(data1 = summExp1, data2 = summExp2), assays_use = c(data1 = 'mat', data2 = 'mat'))
   multiExp <- imputeExpData(multiExp)
   multiExp <- scaleExpData(multiExp, assay = 'imputed_mat')
@@ -57,7 +57,36 @@ testthat::test_that('data scaling works properly', {
   testthat::expect_equal(var_data1, 1L)
   testthat::expect_equal(var_data2, 1L)
 })
-#
-# testthat::test_that('runPCA workflow works', {
-#
-# })
+
+testthat::test_that('data scaling works properly, use_num_feats = FALSE', {
+  multiExp <- createMultiExp(summ_exp_list = list(data1 = summExp1, data2 = summExp2), assays_use = c(data1 = 'mat', data2 = 'mat'))
+  multiExp <- imputeExpData(multiExp)
+  multiExp <- scaleExpData(multiExp, assay = 'imputed_mat', use_num_feats = FALSE)
+  summ_exp <- getSummExp(multiExp)
+  scaled_data <- SummarizedExperiment::assay(summ_exp, 'scaled')
+  testthat::expect_true(all(matrixStats::rowMeans2(scaled_data) - 0 < .Machine$double.eps))
+  covar_mat <- (scaled_data %*% t(scaled_data))/(ncol(scaled_data) - 1)
+  var_data1 <- sum(diag(covar_mat)[1:100])
+  var_data2 <- sum(diag(covar_mat)[101:160])
+  testthat::expect_equal(var_data1, 100L)
+  testthat::expect_equal(var_data2, 60L)
+})
+
+testthat::test_that('mPCA produces expected output', {
+  multiExp <- createMultiExp(summ_exp_list = list(data1 = summExp1, data2 = summExp2), assays_use = c(data1 = 'mat', data2 = 'mat'))
+  multiExp <- imputeExpData(multiExp)
+  # multiExp <- scaleExpData(multiExp, assay = 'imputed_mat', use_num_feats = FALSE)
+  multiExp <- mPCA(multiExp)
+  A <- getLoadings(multiExp, key = 'mPCA')
+  A_len <- sqrt(matrixStats::rowSums2(A^2))
+  data_mat <- assay(multiExp, 'imputed_mat')
+
+  testthat::expect_equal(nrow(data_mat), ncol(A))
+  testthat::expect_true(all(A_len == 1))
+  row_data <- rowData(multiExp)
+  var_expl1 <- varianceExplained(multiExp, key = 'mPCA', feats_use = row_data$feat_id[row_data$expt == 'data1'])
+  var_expl2 <- varianceExplained(multiExp, key = 'mPCA', feats_use = row_data$feat_id[row_data$expt == 'data2'])
+  testthat::expect_true(var_expl1$r2_all > 0.10)
+  testthat::expect_true(var_expl2$r2_all > 0.10)
+})
+

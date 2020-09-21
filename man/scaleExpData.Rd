@@ -4,12 +4,14 @@
 \alias{scaleExpData}
 \title{Scale Experiment Data}
 \usage{
-scaleExpData(x, assay)
+scaleExpData(x, assay, use_num_feats = TRUE)
 }
 \arguments{
 \item{x}{multiExp object}
 
 \item{assay}{character, assay to pull out for scaling.}
+
+\item{use_num_feats}{whether or not to scale data by square root of number of features in feature's datatype}
 }
 \description{
 Scale Experiment Data

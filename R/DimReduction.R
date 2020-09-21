@@ -263,7 +263,6 @@ setMethod('runPCA',
             loadings_mat <- pca_res$rotation
             rownames(loadings_mat) <- paste0(rownames(loadings_mat), '_loading')
             # pca_var <- (pca_res$sdev)^2
-            key <- paste0('pca', suffix)
             SampleID <- rownames(pca_coords)
             col_data <- S4Vectors::DataFrame(SampleID = SampleID, row.names = SampleID)
             row_data <- S4Vectors::DataFrame(t(loadings_mat))
@@ -276,7 +275,10 @@ setMethod('runPCA',
 
 setMethod('runPCA',
           c('SummExpDR'),
-          function(x, i, suffix, std_norm = TRUE) {
+          function(x, i, suffix = NULL, std_norm = TRUE) {
+            if (is.null(suffix)) {
+              suffix <- ''
+            }
             if (is.numeric(i)) {
               assay_name <- SummarizedExperiment::assays(x@summ_exp)[i]
             } else {
@@ -343,5 +345,102 @@ setMethod('runVarimax',
                                       colData = col_data)
             vmax_key <- paste0('varimax', suffix)
             x <- setReducedDims(x, key = vmax_key, value = VmaxDR)
+            return(x)
+          })
+
+
+#' Run PCA on PCA (multistage PCA')
+#'
+#' Intended as a solution to capturing major sources of signal in multiple datasets while preventing
+#' signal from being diminished due to presence of more features in data.
+#' @include MultiExpIntegration.R
+#' @param x multiExp object
+#' @param assay_use assay to pull from
+#' @param min_var = minimum pct variance explained per PC in PCA on each dataset
+#' @param max_dims maximum number of dimensions to pull out
+#' @value multiExp object with mPCA dim reduction added to reducedDim list
+#' @export
+
+setGeneric('mPCA', function(x, assay_use = 'imputed_mat', min_var = 0.05, max_dims = 5) standardGeneric('mPCA'))
+
+setMethod('mPCA',
+          signature = 'multiExp',
+          function(x, assay_use = 'imputed_mat', min_var = 0.05, max_dims = 5) {
+            # data is standard normalized
+            x <- scaleExpData(x, assay_use, use_num_feats = FALSE)
+            row_data <- rowData(x)
+            unique_expts <- unique(row_data$expt)
+
+            loadings_mats <- list()
+
+            for (i in 1:length(unique_expts)) {
+              expt <- unique_expts[i]
+              print(paste('Running PCA for datatype', i, 'of', length(unique_expts)))
+              expt_feats <- row_data[row_data$expt == expt , 'feat_id']
+              # subset by features of given experiment, run PCA. data is already standard normalized
+              x_subs <- subsetData(x, rows = expt_feats)
+              x_subs <- runPCA(x_subs, i = 'scaled', std_norm = FALSE, suffix = '')
+              var_expl_i <- varianceExplained(x_subs, 'PCA', dims_use = 1:max_dims)$r2_by_dim
+              if (any(var_expl_i < min_var)) {
+                if (all(var_expl_i < min_var)) {
+                  warning('no PC met variance explained criterion, using first PC')
+                  max_dims <- 1
+                } else {
+                  max_dims <- max(which(var_expl_i >= min_var))
+                }
+              }
+              # loadings for datatype i
+              V_i <- t(getLoadings(x_subs, 'PCA', paste0('PC', 1:max_dims)))
+              # rescaling factors (1/sqrt(number of PCs)). do as a vector until
+              # end of loop, then call diag to make diagonal matrix
+              D_i <- rep(1/sqrt(ncol(V_i)), ncol(V_i))
+              colnames(V_i) <- paste(expt, colnames(V_i), sep = '_')
+              if (i == 1) {
+                V <- V_i
+                D <- D_i
+              } else {
+                missing_cols_x <- setdiff(colnames(V), colnames(V_i))
+                missing_cols_y <- setdiff(colnames(V_i), colnames(V))
+                pad_zeros <- function(mat, col_names) {
+                  mat_append <- matrix(data = rep(0, nrow(mat)*ncol(mat)), nrow = nrow(mat), ncol = length(col_names))
+                  rownames(mat_append) <- rownames(mat)
+                  colnames(mat_append) <- col_names
+                  mat <- cbind(mat, mat_append)
+                }
+                if (length(missing_cols_x) > 0) {
+                  V_i <- pad_zeros(V_i, missing_cols_x)
+                }
+                if (length(missing_cols_y) > 0) {
+                  V <- pad_zeros(V, missing_cols_y)
+                }
+                V <- rbind(V, V_i[,colnames(V)])
+                D <- c(D, D_i)
+                # gc(full = TRUE)
+              }
+            }
+            D <- diag(D)
+            # run PCA on PCA coords from PCA obtained in prior loop, scaled by # of PCs
+            data_mat <- t(assay(x, 'scaled'))
+            S <- V %*% D
+            rot_coords1 <- data_mat %*% S
+            P_res <- prcomp(S, scale. = FALSE, center = FALSE)
+            Q <- P_res$rotation
+            # final rotation matrix is multiplication of initial rotation matrix by scaling matrix by rotation matrix of PCA on PCA
+            # final rotation matrix is rescaled to unit vectors. we do the unit normalization to simplify calculation of projection
+            A <- S %*% Q
+            A_len <- sqrt(t(matrixStats::colSums2(A^2)))
+            A <- A/matrix(rep(A_len, nrow(A)), nrow = nrow(A), byrow = TRUE)
+            colnames(A) <- paste0('mPC', 1:ncol(A))
+            rownames(A) <- colnames(data_mat)
+            # final coordinates
+            P <- data_mat %*% A
+            # set up return object
+            SampleID <- rownames(P)
+            col_data <- S4Vectors::DataFrame(SampleID = SampleID, row.names = SampleID)
+            rownames(A) <- paste0(rownames(A), '_loading')
+            row_data <- S4Vectors::DataFrame(t(A))
+            mPCA_summ_exp <- create_FactorizedDR(assays = list(mPCA = t(P)), rowData = row_data, colData = col_data)
+            mPCA_summ_exp <- setSourceAssay(mPCA_summ_exp, 'scaled')
+            x <- setReducedDims(x, key = 'mPCA', value = mPCA_summ_exp)
             return(x)
           })
