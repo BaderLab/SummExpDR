@@ -46,32 +46,16 @@ get_cor_vals <- function(X, Y, fdr_filter = 0.10, n_cores = 1, self_only = FALSE
     final_ct <- nrow(loop_df)
     print(paste('kept', final_ct, 'of', initial_ct, 'pairs'))
   }
-  if (n_cores == 1) {
-    df_return <- data.frame(feat_x = character(0), feat_y = character(0), cor = numeric(0), p_val = numeric(0), stringsAsFactors = FALSE)
-    if (pbar) {
-      pb <- txtProgressBar(max = nrow(loop_df), style = 3)
-    }
-
-    ct <- 0
-    for (p in 1:nrow(loop_df)) {
-      df_return <- rbind(df_return, add_df(X, Y, loop_df, p))
-      ct <- ct + 1
-      if (pbar) {
-        setTxtProgressBar(pb, ct)
-      }
-    }
-    if (pbar) {
-      close(pb)
-    }
+  if (n_cores ==  1) {
+    bpparam <- BiocParallel::SerialParam(progressbar = pbar)
   } else {
-    # do parallel runs
     bpparam <- BiocParallel::MulticoreParam(workers = n_cores, progressbar = pbar)
-    bp_result <- BiocParallel::bplapply(1:nrow(loop_df), FUN = function(p) {add_df(X, Y, loop_df, p)}, BPPARAM = bpparam)
-    df_return <- c()
-    for (i in 1:length(bp_result)) {
-      df_return <- rbind(df_return, bp_result[[i]])
-    }
   }
+
+  bpparam <- BiocParallel::MulticoreParam(workers = n_cores, progressbar = pbar)
+  bp_result <- BiocParallel::bplapply(1:nrow(loop_df), FUN = function(p) {add_df(X, Y, loop_df, p)}, BPPARAM = bpparam)
+  df_return <- dplyr::bind_rows(bp_result)
+
   cor_fdr <- p.adjust(df_return$p_val, method = 'BH')
   df_return$fdr <- cor_fdr
   df_return <- df_return[df_return$fdr < fdr_filter, ]
