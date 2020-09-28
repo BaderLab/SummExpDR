@@ -250,9 +250,9 @@ corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
   ##  pt_size = point size for plot
   df_subs <- filter_df(df, filter_by = filter_by, filter_class = filter_class)
   # calculate correlation
-  cor_val <- cor(df_subs[,var1], df_subs[,var2], method = method)
-  cor_val <- round(cor_val, 2)
-  cor_pval <- cor.test(df_subs[,var1], df_subs[,var2], method = method)$p.value
+  cor_result <- cor.test(df_subs[,var1], df_subs[,var2], method = method)
+  cor_val <- round(cor_result$estimate, 2)
+  cor_pval <- cor_result$p.value
   if (cor_pval < .Machine$double.eps) {
     cor_pval <- paste0(' < ', signif(.Machine$double.eps, 2))
   } else {

@@ -27,18 +27,14 @@ check_rownames_colnames <- function(x) {
   colnames(x) <- make.names(orig_colnames)
   if (!all(rownames(x) == orig_rownames)) {
     warning('some or all rownames in input were changed as they had spaces or disallowed symbols')
-    row_replace <- orig_rownames
-  } else {
-    row_replace <- rep(NA, nrow(x))
   }
+  row_replace <- orig_rownames
   SummarizedExperiment::rowData(x) <- replace_col(SummarizedExperiment::rowData(x),
                                                   col_name = 'raw_rownames', value = row_replace, suffix = 'orig')
   if (!all(colnames(x) == orig_colnames)) {
     warning('some or all colnames in input were changed as they had spaces or disallowed symbols')
-    col_replace <- orig_colnames
-  } else {
-    col_replace <- rep(NA, ncol(x))
   }
+  col_replace <- orig_colnames
   SummarizedExperiment::colData(x) <- replace_col(SummarizedExperiment::colData(x),
                                                   col_name = 'raw_colnames', value = col_replace, suffix = 'orig')
   return(x)

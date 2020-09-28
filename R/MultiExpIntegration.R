@@ -129,8 +129,13 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
   for (col_name in c('expt', 'orig_id', 'raw_rownames')) {
     row_data <- replace_col(row_data, col_name, as.vector(feature_key[rownames(row_data), col_name]), suffix = paste0('_orig'))
   }
+  # quick fix to prevent duplicate rows that dplyr::full_join apparently produced
+  col_data <- col_data[!duplicated(col_data), ]
+  row_data <- row_data[!duplicated(row_data), ]
+
   new_mat <- new_mat[ , sort(colnames(new_mat))]
   col_data <- col_data[sort(rownames(col_data)), ]
+
   new_summ_exp <- SummarizedExperiment::SummarizedExperiment(assays = list(stacked = new_mat), rowData = row_data, colData = col_data)
   newMultiExp <- new('multiExp',
                      summ_exp = new_summ_exp,

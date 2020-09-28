@@ -5,11 +5,13 @@
 #' @param Y matrix
 #' @param fdr_filter FDR filter for correlation values
 #' @param self_only only calculate variables with same name in X and Y. example use would be
+#' @param method 'method' argument to cor and cor.test
 #' correlated DNA methylation for a gene and expression of same gene.
+#' @param pbar print progress bar
 #' @value data.frame
 #' @export
 
-get_cor_vals <- function(X, Y, fdr_filter = 0.10, n_cores = 1, self_only = FALSE) {
+get_cor_vals <- function(X, Y, fdr_filter = 0.10, n_cores = 1, self_only = FALSE, method = 'pearson', pbar = FALSE) {
   stopifnot(rownames(X) == rownames(Y))
   add_df <- function(x, y, loop_dataframe, p) {
     failed <- TRUE
@@ -18,8 +20,9 @@ get_cor_vals <- function(X, Y, fdr_filter = 0.10, n_cores = 1, self_only = FALSE
       l <- loop_dataframe$j[p]
       feat_k <- k
       feat_l <- l
-      cor_k_l <- cor(x[,k], y[,l], method = 'pearson')
-      cor_p_val <- cor.test(x[,k], y[,l], method = 'pearson')$p.value
+      cor_result <- cor.test(x[,k], y[,l], method = method)
+      cor_k_l <- cor_result$estimate
+      cor_p_val <- cor_result$p.value
       df <- data.frame(feat_x = feat_k, feat_y = feat_l, cor = cor_k_l, p_val = cor_p_val, stringsAsFactors = FALSE)
       failed <- FALSE
     })
@@ -45,18 +48,25 @@ get_cor_vals <- function(X, Y, fdr_filter = 0.10, n_cores = 1, self_only = FALSE
   }
   if (n_cores == 1) {
     df_return <- data.frame(feat_x = character(0), feat_y = character(0), cor = numeric(0), p_val = numeric(0), stringsAsFactors = FALSE)
-    pb <- txtProgressBar(max = nrow(loop_df), style = 3)
+    if (pbar) {
+      pb <- txtProgressBar(max = nrow(loop_df), style = 3)
+    }
+
     ct <- 0
     for (p in 1:nrow(loop_df)) {
       df_return <- rbind(df_return, add_df(X, Y, loop_df, p))
       ct <- ct + 1
-      setTxtProgressBar(pb, ct)
+      if (pbar) {
+        setTxtProgressBar(pb, ct)
+      }
     }
-    close(pb)
+    if (pbar) {
+      close(pb)
+    }
   } else {
     # do parallel runs
-    bpparam <- BiocParallel::MulticoreParam(workers = n_cores, progressbar = TRUE)
-    bp_result <- BiocParallel::bplapply(1:nrow(loop_df), FUN = function(p) {add_df(X, Y, loop_df, p)})
+    bpparam <- BiocParallel::MulticoreParam(workers = n_cores, progressbar = pbar)
+    bp_result <- BiocParallel::bplapply(1:nrow(loop_df), FUN = function(p) {add_df(X, Y, loop_df, p)}, BPPARAM = bpparam)
     df_return <- c()
     for (i in 1:length(bp_result)) {
       df_return <- rbind(df_return, bp_result[[i]])
