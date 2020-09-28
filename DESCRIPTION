@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.0022
+Version: 0.1.0023
 Author: Owen Whitley
 Maintainer: The package maintainer <owen.whitley@mail.utoronto.ca>
 Description: More about what it does (maybe more than one line)
@@ -30,6 +30,7 @@ Collate:
     'MultiExpIntegration.R'
     'DimReduction.R'
     'Imputation.R'
+    'Pathway_Analysis.R'
     'PlotFunctions.R'
     'gsva_scoring.R'
     'zzz.R'
