@@ -9,6 +9,7 @@ scatter_plot(
   var1,
   var2,
   color_by,
+  label = NULL,
   filter_by = NULL,
   filter_class = NULL,
   pt.size = 0.5,
@@ -18,7 +19,8 @@ scatter_plot(
   legend_pt_shape = 15,
   xlim = NULL,
   ylim = NULL,
-  legend_title = FALSE
+  legend_title = FALSE,
+  lab_size = 0.25
 )
 }
 \arguments{
@@ -29,6 +31,8 @@ scatter_plot(
 \item{var2}{= y axis variable}
 
 \item{color_by}{= variable to color points by}
+
+\item{label}{= variable to label samples by}
 
 \item{filter_by}{= subset data by a particular categorical variable}
 
