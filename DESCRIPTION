@@ -14,9 +14,11 @@ Suggests:
 Imports:
   BiocParallel,
   dplyr,
+  GenomicFeatures,
   ggplot2,
   ggrepel,
   GSVA,
+  IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
   Matrix,
   matrixStats,
   methods,
@@ -24,7 +26,8 @@ Imports:
   reticulate,
   scales,
   stats,
-  SummarizedExperiment
+  SummarizedExperiment,
+  TxDb.Hsapiens.UCSC.hg19.knownGene
 RoxygenNote: 7.0.2
 Collate: 
     'Correlation.R'
