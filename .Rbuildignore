@@ -1,0 +1,3 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.assemble_data\.R$

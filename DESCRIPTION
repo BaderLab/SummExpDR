@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.0025
+Version: 0.1.0026
 Author: Owen Whitley
 Maintainer: The package maintainer <owen.whitley@mail.utoronto.ca>
 Description: More about what it does (maybe more than one line)
@@ -31,6 +31,8 @@ Imports:
 RoxygenNote: 7.0.2
 Collate: 
     'Correlation.R'
+    'DNAm_anno.R'
+    'DNAm_utils.R'
     'SummExpDR.R'
     'MultiExpIntegration.R'
     'DimReduction.R'

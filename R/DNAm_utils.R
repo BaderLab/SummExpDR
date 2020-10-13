@@ -6,17 +6,19 @@
 ##  ../../data/raw/misc/infinium-methylationepic-manifest-column-headings.pdf
 ##  https://support.illumina.com/content/dam/illumina-support/documents/downloads/productfiles/methylationepic/infinium-methylationepic-manifest-column-headings.pdf
 
-#' Get probes mapped to by gene in data illumina_EPIC_hg19_10b4_gene_2_probe
+#' Map gene to probes
 #'
 #' @param gene = gene name
+#' @param gene_probe_mapping = gene to probe mapping. must be dataframe containing genes in rows and column 'mapped_probes' of semicolon delimited strings
+#' denoting EPIC probes
 #' @value character vector of illumina EPIC array probes
 #' @export
 #'
-get_mapped_probes <- function(gene) {
-  if (!gene %in% rownames(illumina_EPIC_hg19_10b4_gene_2_probe)) {
-    stop(paste(gene, 'not found in '))
+get_mapped_probes <- function(gene, gene_probe_mapping) {
+  if (!gene %in% rownames(gene_probe_mapping)) {
+    stop(paste(gene, 'not found in mapping'))
   } else {
-    probes <- strsplit(illumina_EPIC_hg19_10b4_gene_2_probe[gene,'gene2probe'], split = ';')[[1]]
+    probes <- strsplit(gene_probe_mapping[gene,'mapped_probes'], split = ';')[[1]]
   }
   return(probes)
 }
@@ -24,11 +26,13 @@ get_mapped_probes <- function(gene) {
 #' Get check if given gene has min number of probes
 #' @param min_probes = minimum number of probes for a gene
 #' @param data_mat = nxm feature x sample matrix
+#' @inheritParams get_mapped_probes
 #' @value logical vector indicating which genes have minimum number of probes per gene
-check_min_probes <- function (min_probes, data_mat) {
-  res <- as.logical(lapply(strsplit(illumina_EPIC_hg19_10b4_gene_2_probe$gene2probe, split = ';'),
+#' @export
+check_min_probes <- function (min_probes, data_mat, gene_probe_mapping) {
+  res <- as.logical(lapply(strsplit(gene_probe_mapping$mapped_probes, split = ';'),
                            FUN = function(x) {sum(x %in% rownames(data_mat)) >= min_probes}))
-  names(res) <- illumina_EPIC_hg19_10b4_gene_2_probe$gene_id
+  names(res) <- gene_probe_mapping$gene
   if (!any(res)) {
     warning(paste('no gene has >=', min_probes, 'probes (min probes)'))
   }
@@ -38,67 +42,74 @@ check_min_probes <- function (min_probes, data_mat) {
 #' Calculate Genewise Average Of Probe Feature
 #'
 #' @param inp_data = input data matrix, rows corresponding to probes, columns corresponding to features
-#'
-#' @return list with matrix of gene-wise averages, genes in rows, features in columns. Note that genes without any probes are excluded
-#' from this matrix.
-#'
-#'
+#' @inheritParams get_mapped_probes
+#' @param n_cores = number of cores to use
+#' @return list with matrix of gene-wise averages, genes in rows, features in columns, and a second entry with number of probes per gene.
+#' Note that genes without any probes are excluded from this matrix and probe count entry
 #' @export
-calculate_probe_avg <- function(inp_data, mapping) {
+calculate_probe_avg <- function(inp_data, gene_probe_mapping, n_cores = 1, pbar = TRUE) {
   if (is.data.frame(inp_data)) {
     inp_data <- as.matrix(inp_data)
   } else if (!(is.matrix(inp_data) || is(inp_data, 'Matrix'))) {
     stop('must input a matrix or a data.frame (dataframe coerced to matrix)')
   }
   inp_data <- Matrix::Matrix(inp_data)
-  # mapping <- illumina_EPIC_hg19_10b4_gene_2_probe$gene2probe
-  # names(mapping) <- illumina_EPIC_hg19_10b4_gene_2_probe$gene_id
-  # setup matrices/indexes
-  n_gene <- length(mapping)
-  probe_avg_mat <- matrix(data = numeric(n_gene*ncol(inp_data)), nrow = n_gene)
-  rownames(probe_avg_mat) <- names(mapping)
-  colnames(probe_avg_mat) <- colnames(inp_data)
-  probes_per_gene <- integer(n_gene)
-  names(probes_per_gene)
   probe_names <- rownames(inp_data)
-
+  mapping <- strsplit(gene_probe_mapping$mapped_probes, split = ';')
   # keep track of genes whose probe mapping satisfies regex, has at least 1 probe
   probe_map_regex <- '^(([A-z0-9]|[.])+)+(;([A-z0-9]|[.])+)*$'
-  unmatched_regex_ct <- 0
-  zero_probes_ct <- 0
-  genes_keep <- rep(TRUE, n_gene)
-  probes_kept <- character(0)
+  has_unmatched_regex <- !grepl(probe_map_regex, gene_probe_mapping$gene)
 
-  for (i in 1:n_gene) {
-    gene_name <- names(mapping)[i]
-    mapped_probe_str <- mapping[gene_name]
-    if (!grepl(probe_map_regex, mapped_probe_str)) {
-      unmatched_regex_ct <- unmatched_regex_ct + 1
-      genes_keep[i] = FALSE
-      next
-    } else {
-      probes_i <- strsplit(mapped_probe_str, split = ';')[[1]]
-    }
-    probe_inds_i <- probe_names %in% probes_i
-    num_probes <- sum(probe_inds_i)
+  # set names of mapping to gene name prior to filtering
+  names(mapping) <- gene_probe_mapping$gene
+  # filter mapping
+  genes_keep <- !has_unmatched_regex
+  mapping <- mapping[genes_keep]
+  n_gene <- length(mapping)
+  do_avg <- function(i, map_ = mapping, mat_ = inp_data) {
+    # return whether or not there was a successful mapping
+    gene_name <- names(map_)[i]
+    mapped_probes <- unlist(mapping[gene_name])
+    probe_inds_i <- which(probe_names %in% mapped_probes)
+    num_probes <- length(probe_inds_i)
     if (num_probes > 0) {
-      data_subs_i = inp_data[probe_inds_i, ]
+      data_subs_i = mat_[probe_inds_i, ]
       if (is.vector(data_subs_i)) {
         means_i <- data_subs_i
       } else {
         means_i = Matrix::colMeans(data_subs_i)
       }
-      probe_avg_mat[i,] = means_i
-      probes_kept <- union(probes_kept, probe_names[probe_inds_i])
-      probes_per_gene[i] <- num_probes
     } else {
-      genes_keep[i] <- FALSE
-      zero_probes_ct <- zero_probes_ct + 1
-      next
+      # zero probes
+      means_i <- rep(NA, ncol(mat_))
     }
+    # give number of probes at end of vector
+    means_i <- c(means_i, num_probes)
+    # conversion to dataframe so that dplyr::bind_rows can handle
+    means_i <- matrix(means_i, nrow = 1)
+    colnames(means_i) <- 1:ncol(means_i)
+    means_i <- as.data.frame(means_i)
+    return(means_i)
   }
 
-  msg <- paste0(length(probes_kept), ' of ', length(probe_names), ' probes from dataset kept\n')
+  if (n_cores > 1) {
+    bpparam <- BiocParallel::MulticoreParam(workers = n_cores, progressbar = pbar)
+  } else {
+    bpparam <- BiocParallel::SerialParam(progressbar = pbar)
+  }
+  loop_list <- BiocParallel::bplapply(1:n_gene, BPPARAM = bpparam, FUN = function(x) {do_avg(x)})
+  loop_mat <- as.matrix(dplyr::bind_rows(loop_list))
+  # extract probe avg mat, probe counts (probe counts are in last column)
+  rownames(loop_mat) <- names(mapping)
+  probe_avg_mat <- loop_mat[,1:(ncol(loop_mat) - 1)]
+  colnames(probe_avg_mat) <- colnames(inp_data)
+  probe_count <- loop_mat[,ncol(loop_mat)]
+  names(probe_count) <- rownames(loop_mat)
+  # count how many times you have unmatched regex or zero probes from a gene mapped to data's probes
+  unmatched_regex_ct <- sum(has_unmatched_regex)
+  has_zero_probes <- probe_count == 0
+  zero_probes_ct <- sum(has_zero_probes)
+  msg <- paste0(sum(probe_count), ' of ', length(probe_names), ' probes from dataset kept\n')
   msg <- paste0(msg, sum(genes_keep), ' of ', length(genes_keep), ' genes in gene-probe mapping kept\n')
   cat(msg)
 
@@ -113,9 +124,10 @@ calculate_probe_avg <- function(inp_data, mapping) {
   if (warn_msg != '') {
     warning(warn_msg)
   }
-  probe_avg_mat <- probe_avg_mat[genes_keep, ]
-  probes_per_gene <- probes_per_gene[genes_keep]
+  # filter for final probe_avg_mat and probe count vector to be returned by function
+  probe_avg_mat <- probe_avg_mat[!has_zero_probes, ]
+  probe_count <- probe_count[!has_zero_probes]
 
-  return(list(probe_avg_mat = probe_avg_mat, probes_per_gene = probes_per_gene))
+  return(list(probe_avg_mat = probe_avg_mat, probes_per_gene = probe_count))
 
 }

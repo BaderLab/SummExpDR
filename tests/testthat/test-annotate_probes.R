@@ -14,6 +14,7 @@ transcripts <- GenomicFeatures::transcripts(TxDb.Hsapiens.UCSC.hg19.knownGene::T
 names(transcripts) <- transcripts$tx_name
 tx_name <- names(transcripts)
 seq_names <- as.vector(GenomicRanges::seqnames(transcripts), mode = 'character')
+neg_strand <- as.vector(GenomicRanges::strand(transcripts), mode = 'character') == '-'
 starts <- as.vector(GenomicRanges::start(transcripts), mode = 'integer')
 ends <- as.vector(GenomicRanges::end(transcripts), mode = 'integer')
 inds_use <- 1:nrow(epic_anno)
@@ -47,7 +48,7 @@ coord_col <- 'pos'
 # Run Tests
 
 test_that('.check_upstream', {
-  # check on positive and negative strands, 
+  # check on positive and negative strands,
   expect_identical(TRUE, .check_upstream(upstream_1, chr = 'chr1', regions = transcripts, bp = 200)[chr1_pos_idx])
   expect_identical(FALSE, .check_upstream(out_1a, chr = 'chr1', regions = transcripts, bp = 200)[chr1_pos_idx])
   expect_identical(FALSE, .check_upstream(out_1b, chr = 'chr1', regions = transcripts, bp = 200)[chr1_pos_idx])
@@ -55,7 +56,7 @@ test_that('.check_upstream', {
   expect_identical(TRUE, .check_upstream(upstream_2, chr = 'chr1', regions = transcripts, bp = 200)[chr1_neg_idx])
   expect_identical(FALSE, .check_upstream(out_2a, chr = 'chr1', regions = transcripts, bp = 200)[chr1_neg_idx])
   expect_identical(FALSE, .check_upstream(out_2b, chr = 'chr1', regions = transcripts, bp = 200)[chr1_neg_idx])
-  
+
   # test results on whole set of transcripts
   upstream_pos <- ((starts - upstream_1) <= 200) & ((starts - upstream_1) > 0) & (seq_names == 'chr1')
   upstream_neg <- ((upstream_1 - ends) <= 200) & ((upstream_1 - ends) > 0) & (seq_names == 'chr1')
@@ -64,7 +65,7 @@ test_that('.check_upstream', {
   expect_identical(upstream_neg[neg_strand], check_upstream_result[neg_strand])
   # anything not on chr1 should not be labeled as upstream
   expect_true(all(check_upstream_result[seq_names != 'chr1'] == FALSE))
-  
+
 })
 
 test_that('.check_isin', {
@@ -81,9 +82,9 @@ test_that('.check_isin', {
 
 test_that('annotate_probes: serial', {
   # run the annotation function
-  epic_anno_new <- annotate_probes(illumina_anno = epic_anno, 
+  epic_anno_new <- annotate_probes(illumina_anno = epic_anno,
                                    granges_prep_list = granges_prep_list,
-                                   prefix = 'su2c_gencode_v12', 
+                                   prefix = 'su2c_gencode_v12',
                                    coord_column = coord_col,
                                    chr_column = chr_col,
                                    n_cores = 1)
@@ -121,16 +122,16 @@ test_that('annotate_probes: serial', {
 
 test_that('annotate_probes: parallel functionality', {
   # run the annotation function
-  epic_anno_serial <- annotate_probes(illumina_anno = epic_anno, 
+  epic_anno_serial <- annotate_probes(illumina_anno = epic_anno,
                                       granges_prep_list = granges_prep_list,
-                                      prefix = 'su2c_gencode_v12', 
+                                      prefix = 'su2c_gencode_v12',
                                       coord_column = coord_col,
                                       chr_column = chr_col,
                                       n_cores = 1)
   # run annotation function, parallel
-  epic_anno_parallel <- annotate_probes(illumina_anno = epic_anno, 
+  epic_anno_parallel <- annotate_probes(illumina_anno = epic_anno,
                                         granges_prep_list = granges_prep_list,
-                                        prefix = 'su2c_gencode_v12', 
+                                        prefix = 'su2c_gencode_v12',
                                         coord_column = coord_col,
                                         chr_column = chr_col,
                                         n_cores = 3)
