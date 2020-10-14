@@ -6,7 +6,7 @@
 \usage{
 do_fisher_multi(
   query,
-  gmt_file,
+  pathway_list,
   master_set,
   FDR = 0.1,
   n_cores = 1,
@@ -16,9 +16,13 @@ do_fisher_multi(
 \arguments{
 \item{query}{character vector with query feature set}
 
-\item{gmt_file}{gmt file containing pathways of interest}
+\item{pathway_list}{list of pathways of interest}
 
 \item{FDR}{FDR to filter at}
+
+\item{n_cores}{number of cores to use for fisher's exact test}
+
+\item{pbar}{whether or not to use a progressbar}
 }
 \description{
 Fisher's Exact Test on all pathways in gmt given query geneset
