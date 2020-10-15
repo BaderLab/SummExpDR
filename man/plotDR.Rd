@@ -4,7 +4,17 @@
 \alias{plotDR}
 \title{Plot Reduced Dims}
 \usage{
-plotDR(x, dim1, dim2, key, color_by, label = NULL, assay = NULL, ...)
+plotDR(
+  x,
+  dim1,
+  dim2,
+  key,
+  color_by = NULL,
+  shape_by = NULL,
+  label = NULL,
+  assay = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{SummExpDR object}

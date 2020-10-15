@@ -8,19 +8,17 @@ scatter_plot(
   df,
   var1,
   var2,
-  color_by,
+  color_by = NULL,
+  shape_by = NULL,
   label = NULL,
   filter_by = NULL,
   filter_class = NULL,
-  pt.size = 0.5,
-  pt.shape = 16,
+  pt_size = 0.5,
   alpha = 0.4,
   legend_pt_size = 20,
-  legend_pt_shape = 15,
   xlim = NULL,
   ylim = NULL,
-  legend_title = FALSE,
-  lab_size = 0.25
+  lab_size = 1
 )
 }
 \arguments{
@@ -31,6 +29,8 @@ scatter_plot(
 \item{var2}{= y axis variable}
 
 \item{color_by}{= variable to color points by}
+
+\item{shape_by}{= variable to shape points by}
 
 \item{label}{= variable to label samples by}
 

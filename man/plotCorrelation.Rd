@@ -4,18 +4,34 @@
 \alias{plotCorrelation}
 \title{correlation plot method,}
 \usage{
-plotCorrelation(x, feat1, feat2, color_by, key = NULL, assay = NULL, ...)
+plotCorrelation(
+  x,
+  feat1,
+  feat2,
+  color_by = NULL,
+  shape_by = NULL,
+  key = NULL,
+  assay = NULL,
+  method = "pearson",
+  filter_by = NULL,
+  filter_class = NULL,
+  ...
+)
 }
 \arguments{
-\item{x}{SummExpDR object}
-
 \item{feat1}{x variable to plot}
 
 \item{feat2}{y variable to plot}
 
-\item{key}{key for reduced dims to use}
+\item{color_by}{= variable to color points by}
 
-\item{assay}{required if pulling ouot feature values for assay data}
+\item{shape_by}{= variable to shape points by}
+
+\item{method}{method for correlation}
+
+\item{filter_by}{= subset data by a particular categorical variable}
+
+\item{filter_class}{= set of allowed classes for subset}
 
 \item{...}{other arguments to corplot_2_var}
 }

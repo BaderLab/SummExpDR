@@ -60,27 +60,24 @@ discrete_color_mapping <- function(categorical_vals) {
 #' @param var1 = x axis variable
 #' @param var2 = y axis variable
 #' @param color_by = variable to color points by
+#' @param shape_by = variable to shape points by
 #' @param label = variable to label samples by
 #' @param filter_by = subset data by a particular categorical variable
 #' @param filter_class = set of allowed classes for subset
-#' @param pt.size
+#' @param pt_size
 #' @param alpha
 #' @param legend_pt_size
-#' @param legend_pt_shape
 #' @param xlim
 #' @param ylim
 #' @param lab_size
 #' @value  ggplot2 object
 #' @export
 
-scatter_plot <- function(df, var1, var2, color_by, label = NULL,
-                        filter_by = NULL, filter_class = NULL,
-                        pt.size = 0.5, pt.shape =  16, alpha = 0.4,
-                        legend_pt_size = 20, legend_pt_shape = 15,
-                        xlim = NULL, ylim = NULL, legend_title = FALSE,
-                        lab_size = 0.25) {
+scatter_plot <- function(df, var1, var2, color_by = NULL, shape_by = NULL, label = NULL,
+                        filter_by = NULL, filter_class = NULL, pt_size = 3.0, alpha = 0.4,
+                        legend_pt_size = 3.0, xlim = NULL, ylim = NULL,
+                        lab_size = 1.0) {
   # set x and y limits if NULL
-
   if (is.null(xlim)) {
     xlim <- get_lims(df[,var1])
   }
@@ -88,29 +85,45 @@ scatter_plot <- function(df, var1, var2, color_by, label = NULL,
     ylim <- get_lims(df[,var2])
   }
 
-  tryCatch({df[,color_by]},
-           error = function(e) {
-             # since warnings not going to stderr file for Rmd, if feature is not found in
-             # df we specify an error that says the name of the column not found
-             stop(paste('could not find feature', color_by, 'in metadata'))
-           })
+
   # decide if dealing with categorical data, set appropriate settings
-  is_categorical <- !is.numeric(df[,color_by])
+  if (is.null(color_by)) {
+    color_var <- NULL
+    color_is_categorical <- TRUE
+  } else {
+    color_var <- as.name(color_by)
+    color_is_categorical <- !is.numeric(df[,color_by])
+  }
+  if (is.null(shape_by)) {
+    shape_var <- NULL
+  } else {
+    shape_var <- as.name(shape_by)
+  }
 
   # make plot
-  if (is_categorical) {
+  if (color_is_categorical) {
     # categorical values
     discrete_col_mapping <- discrete_color_mapping(df[,color_by])
     # filter data as desired after getting appropriate color mapping
     df <- filter_df(df = df, filter_by = filter_by, filter_class = filter_class)
-    p <- ggplot2::ggplot(data = df, mapping = ggplot2::aes_(x = as.name(var1), y = as.name(var2))) +
-      ggplot2::geom_point(ggplot2::aes_(color = as.name(color_by)), size = pt.size, alpha = alpha, pch = pt.shape)
-    p <- p + ggplot2::scale_color_manual(values = discrete_col_mapping)
-    p <- p + ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(size=legend_pt_size,
-                                                              shape=legend_pt_shape),
-                                          title = ifelse(legend_title, color_by, '')))
+    p <- ggplot2::ggplot(data = df, mapping = ggplot2::aes_(x = as.name(var1), y = as.name(var2), color = color_var, shape = shape_var))
+    p <- p + ggplot2::geom_point(size = pt_size, alpha = alpha)
+    if (!is.null(color_by)) {
+      p <- p + ggplot2::scale_color_manual(values = discrete_col_mapping)
+    }
+    if (!is.null(color_by) && !is.null(shape_by)) {
+      p <- p + ggplot2::guides(colour = ggplot2::guide_legend(title = color_by, override.aes = list(size = legend_pt_size)),
+                               shape = ggplot2::guide_legend(title = shape_by, override.aes = list(size = legend_pt_size)))
+    }
+    if (!is.null(color_by) && is.null(shape_by)) {
+      p <- p + ggplot2::guides(colour = ggplot2::guide_legend(title = color_by, override.aes = list(size = legend_pt_size)))
+    }
+    if (is.null(color_by) && !is.null(shape_by)) {
+      p <- p + ggplot2::guides(shape = ggplot2::guide_legend(title = shape_by, override.aes = list(size = legend_pt_size)))
+    }
+
   } else {
-    # numeric values
+    # numeric values. Note here that color cannot be NULL here
     color_num <- df[,color_by]
     qtl_vals <- quantile(color_num[!is.na(color_num)], seq(0,1, 0.05))
     # set values for color scale
@@ -148,14 +161,14 @@ scatter_plot <- function(df, var1, var2, color_by, label = NULL,
     # do the plot
     p <- ggplot2::ggplot(data = df, mapping = ggplot2::aes_(x = as.name(var1), y = as.name(var2)))
     if (zero_center) {
-      p <- p + ggplot2::geom_point(ggplot2::aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
-      # p <- p + geom_point(aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
+      p <- p + ggplot2::geom_point(ggplot2::aes_(color = df$color_vals, shape = shape_var), size = pt_size, alpha = alpha)
+      # p <- p + geom_point(aes_(color = df$color_vals), size = pt_size, alpha = alpha, pch = pt_shape)
       # p <- p + scale_color_gradient2(midpoint = 0, limits = c(min_val, max_val), low = 'turquoise', mid = 'white', high = 'orange')
       p <- p + ggplot2::scale_color_gradient2(midpoint = 0, low = 'blue', mid = 'darkgrey', high = 'red')
       # p <- p + theme_dark()
       p <- p + ggplot2::theme_light()
     } else {
-      p <- p + ggplot2::geom_point(ggplot2::aes_(color = df$color_vals), size = pt.size, alpha = alpha, pch = pt.shape)
+      p <- p + ggplot2::geom_point(ggplot2::aes_(color = df$color_vals, shape = shape_var), size = pt_size, alpha = alpha)
       # p <- p + scale_color_gradient2(low = 'turquoise', mid = 'white', high = 'orange',
       #                                midpoint = mean(df$color_vals),
       #                                limits = c(min_val, max_val))
@@ -163,19 +176,27 @@ scatter_plot <- function(df, var1, var2, color_by, label = NULL,
       # p <- p + theme_dark()
       p <- p + ggplot2::theme_light()
     }
-    if (!legend_title) {
-      p <- p + ggplot2::guides(color = guide_colorbar(title = NULL))
-    } else {
-      p <- p + ggplot2::guides(color = guide_colorbar(title = color_by))
-    }
+    # if (!legend_title) {
+    #   p <- p + ggplot2::guides(color = guide_colorbar(title = NULL))
+    # } else {
+    #   p <- p + ggplot2::guides(color = guide_colorbar(title = color_by))
+    # }
     # p <- p + scale_color_gradientn(colors = continuous_colors, breaks = continuous_breaks)
+    # color_by is never NULL here
+    if (!is.null(color_by) && !is.null(shape_by)) {
+      p <- p + ggplot2::guides(colour = ggplot2::guide_colorbar(title = color_by, override.aes = list(size = legend_pt_size)),
+                               shape = ggplot2::guide_legend(title = shape_by, override.aes = list(size = legend_pt_size)))
+    }
+    if (!is.null(color_by) && is.null(shape_by)) {
+      p <- p + ggplot2::guides(colour = ggplot2::guide_colorbar(title = color_by, override.aes = list(size = legend_pt_size)))
+    }
 
   }
   if (!is.null(label)) {
-    p <- p + ggrepel::geom_text_repel(mapping = ggplot2::aes_(label = as.name(label)), size = lab_size)
+    p <- p + ggrepel::geom_text_repel(mapping = ggplot2::aes_(label = as.name(label)), size = lab_size, color = 'black')
   }
   p <- p + ggplot2::coord_cartesian(xlim = xlim, ylim = ylim)
-  p <- p + ggplot2::ggtitle(color_by)
+  # p <- p + ggplot2::ggtitle(color_by)
   return(p)
 }
 
@@ -184,6 +205,7 @@ scatter_plot <- function(df, var1, var2, color_by, label = NULL,
 #' @param dim1
 #' @param dim2
 #' @param color_by
+#' @param shape_by
 #' @param label
 #' @param key key for reduced dims to use
 #' @param assay required if pulling ouot feature values for assay data
@@ -191,20 +213,19 @@ scatter_plot <- function(df, var1, var2, color_by, label = NULL,
 #' @value ggplot2 object
 #' @export
 
-setGeneric('plotDR', function(x, dim1, dim2, key, color_by, label = NULL, assay = NULL, ...) standardGeneric('plotDR'))
+setGeneric('plotDR', function(x, dim1, dim2, key, color_by = NULL, shape_by = NULL, label = NULL, assay = NULL, ...) standardGeneric('plotDR'))
 
 setMethod('plotDR',
           signature = 'SummExpDR',
-          function(x, dim1, dim2, key, color_by, label = NULL, assay = NULL, ...) {
-            vars_fetch <- c(dim1, dim2, color_by)
-            if (!is.null(label)) {
-              vars_fetch <- c(vars_fetch, label)
-            }
+          function(x, dim1, dim2, key, color_by = NULL, shape_by = NULL, label = NULL, assay = NULL, ...) {
+            # fetch specified variables. Takes advantage of the fact that concatenation with NULL just yields all non-NULL elements
+            vars_fetch <- c(dim1, dim2, color_by, shape_by, label)
             fetched_data <- fetchData(x, varsFetch = vars_fetch, assayKey = assay, redDimKeys = key, mode = 'sample_wise')
             # renaming is to avoid weird errors when inputs have same name as arguments in functiton
             col <- color_by
             lab <- label
-            p <- scatter_plot(fetched_data, var1 = dim1, var2 = dim2, color_by = col, label = lab, ...)
+            shape <- shape_by
+            p <- scatter_plot(fetched_data, var1 = dim1, var2 = dim2, color_by = col, shape_by = shape, label = lab, ...)
             return(p)
           })
 
@@ -232,13 +253,13 @@ setMethod('screePlot',
 
 #' 2 variable correlation plot
 #' @inheritParams scatter_plot
+#' @param method method for correlation
+#' @details note that correlation is calculated within filtered subset of data
 #' @value ggplot2 object
 #' @export
 
-corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
-                          filter_by = NULL, filter_class = NULL, pt.size = 1, alpha = 0.4,
-                          legend_pt_size = 20, legend_pt_shape = 15,
-                          xlim = NULL, ylim = NULL, legend_title = TRUE) {
+corplot_2_var <- function(df, var1, var2, color_by = NULL, shape_by = NULL, label = NULL, method = 'pearson',
+                          filter_by = NULL, filter_class = NULL, ...) {
   ## Show correlation of two numeric variables for either a dataframe or seurat object
   ## INPUTS:
   ##  df = data.frame
@@ -260,15 +281,11 @@ corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
                    var1 = var1,
                    var2 = var2,
                    color_by = color_by,
+                   shape_by = shape_by,
+                   label = label,
                    filter_by = filter_by,
                    filter_class = filter_class,
-                   pt.size = pt.size,
-                   alpha = alpha,
-                   legend_pt_size = legend_pt_size,
-                   legend_pt_shape = legend_pt_shape,
-                   xlim = xlim,
-                   ylim = ylim,
-                   legend_title = legend_title)
+                   ...)
   title_use <- paste(var1, 'vs', var2)
   subtitle_use <- paste(method, 'correlation:', cor_val, '; p', cor_pval)
   p <- p + labs(title = title_use, subtitle = subtitle_use)
@@ -276,7 +293,7 @@ corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
 }
 
 #' correlation plot method,
-#' @inheritParams plotDR
+#' @inheritParams corplot_2_var
 #' @param feat1 x variable to plot
 #' @param feat2 y variable to plot
 #' @param ... other arguments to corplot_2_var
@@ -284,14 +301,16 @@ corplot_2_var <- function(df, var1, var2, color_by, method = 'pearson',
 #' @export
 
 setGeneric('plotCorrelation',
-           function(x, feat1, feat2, color_by, key = NULL, assay = NULL, ...) standardGeneric('plotCorrelation'))
+           function(x, feat1, feat2, color_by = NULL, shape_by = NULL,
+                    key = NULL, assay = NULL, method = 'pearson', filter_by = NULL, filter_class = NULL, ...)
+             standardGeneric('plotCorrelation'))
 
 setMethod('plotCorrelation',
           signature = 'SummExpDR',
-          function(x, feat1, feat2, color_by, key = NULL, assay = NULL, ...) {
-            feats_fetch <- c(feat1, feat2, color_by)
+          function(x, feat1, feat2, color_by = NULL, shape_by = NULL, label = NULL, key = NULL, assay = NULL, ...) {
+            feats_fetch <- c(feat1, feat2, color_by, shape_by, label)
             fetched_data <- fetchData(x, feats_fetch, key, assay, mode = 'sample_wise')
-            p <- corplot_2_var(fetched_data, feat1, feat2, color_by, ...)
+            p <- corplot_2_var(fetched_data, feat1, feat2, color_by = color_by, shape_by = shape_by, label = label, ...)
             return(p)
           })
 

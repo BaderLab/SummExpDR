@@ -8,17 +8,13 @@ corplot_2_var(
   df,
   var1,
   var2,
-  color_by,
+  color_by = NULL,
+  shape_by = NULL,
+  label = NULL,
   method = "pearson",
   filter_by = NULL,
   filter_class = NULL,
-  pt.size = 1,
-  alpha = 0.4,
-  legend_pt_size = 20,
-  legend_pt_shape = 15,
-  xlim = NULL,
-  ylim = NULL,
-  legend_title = TRUE
+  ...
 )
 }
 \arguments{
@@ -30,10 +26,19 @@ corplot_2_var(
 
 \item{color_by}{= variable to color points by}
 
+\item{shape_by}{= variable to shape points by}
+
+\item{label}{= variable to label samples by}
+
+\item{method}{method for correlation}
+
 \item{filter_by}{= subset data by a particular categorical variable}
 
 \item{filter_class}{= set of allowed classes for subset}
 }
 \description{
 2 variable correlation plot
+}
+\details{
+note that correlation is calculated within filtered subset of data
 }
