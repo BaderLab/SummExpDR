@@ -51,8 +51,6 @@ get_cor_vals <- function(X, Y, fdr_filter = 0.10, n_cores = 1, self_only = FALSE
   } else {
     bpparam <- BiocParallel::MulticoreParam(workers = n_cores, progressbar = pbar)
   }
-
-  bpparam <- BiocParallel::MulticoreParam(workers = n_cores, progressbar = pbar)
   bp_result <- BiocParallel::bplapply(1:nrow(loop_df), FUN = function(p) {add_df(X, Y, loop_df, p)}, BPPARAM = bpparam)
   df_return <- dplyr::bind_rows(bp_result)
 

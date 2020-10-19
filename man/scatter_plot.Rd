@@ -13,9 +13,9 @@ scatter_plot(
   label = NULL,
   filter_by = NULL,
   filter_class = NULL,
-  pt_size = 0.5,
+  pt_size = 3,
   alpha = 0.4,
-  legend_pt_size = 20,
+  legend_pt_size = 3,
   xlim = NULL,
   ylim = NULL,
   lab_size = 1

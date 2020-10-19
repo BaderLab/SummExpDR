@@ -1,26 +1,4 @@
-#' Fisher's Exact Test, with set input
-#'
-#' @param set1 character vector containing a set of labels
-#' @param set2 character vector containing a set of labels
-#' @param master_set set of which set1 and set2 are a subset of and from which they were sampled
-#' @description computes fisher's exact test for association between set1 and set2
-#' given a master set from which set1 and set 2 were drawn.
-#' @return the result of fisher.test run for a contingency table made given the input sets
-#' @export
-#'
-#' @examples
-fisher.test.sets <- function(set1, set2, master_set) {
-  if (!all(set1 %in% master_set) || !all(set2 %in% master_set)) {
-    stop('all members of set1 and set2 must be members of master set')
-  }
-  TT <- length(intersect(set1, set2))
-  TF <- length(set2) - TT
-  FT <- length(set1) - TT
-  FF <- length(setdiff(master_set, set1)) - TF
-  cont.mat <- matrix(c(TT, TF, FT, FF), nrow = 2)
-  test.result <- fisher.test(cont.mat, alternative = 'greater')
-  return(test.result)
-}
+
 
 
 #' Load gmt file
@@ -90,7 +68,7 @@ do_fisher_multi <- function(query, pathway_list, master_set, FDR = 0.10, n_cores
   stopifnot(!is.null(names(pathway_list)))
   do_fisher_single <- function(x) {
     pathway_x <- pathway_list[[x]]
-    fisher_test_result <- fisher.test.sets(set1 = query, set2 = pathway_x, master_set = master_set)
+    fisher_test_result <- fisher_test_sets(set1 = query, set2 = pathway_x, master_set = master_set)
     intersection <- intersect(query, pathway_x)
     return(data.frame(pathway_name = x,
                       intersection = paste(intersection, collapse = ';'),

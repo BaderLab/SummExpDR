@@ -33,3 +33,8 @@ gene_probe_map_tss200 <- SummExpDR::make_gene_probe_mapping(illumina_probe_anno_
 illumina_EPIC_hg19_10b4_gene_2_probe_tss200 <- gene_probe_map_tss200
 save(illumina_EPIC_hg19_10b4_gene_2_probe_tss200, file = './data/illumina_EPIC_hg19_10b4_gene_2_probe_tss200.RData')
 sessionInfo()
+
+# assemble gmt file for extra test data dealing with set overlap
+gmt_file <- '../su2c_v2/data/raw/gmt_files/baderlab_gmts/Human_GO_AllPathways_no_GO_iea_April_01_2018_symbol.gmt'
+baderlab_human_pathways_dec_2018 <- SummExpDR::load_gmt(gmt_file)
+save(baderlab_human_pathways_dec_2018, file = './data/baderlab_human_pathways_dec_2018.RData')

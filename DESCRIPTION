@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.0028
+Version: 0.1.0029
 Author: Owen Whitley
 Maintainer: The package maintainer <owen.whitley@mail.utoronto.ca>
 Description: More about what it does (maybe more than one line)
@@ -27,6 +27,7 @@ Imports:
   scales,
   stats,
   SummarizedExperiment,
+  tidyr,
   TxDb.Hsapiens.UCSC.hg19.knownGene
 RoxygenNote: 7.0.2
 Collate: 
@@ -37,6 +38,7 @@ Collate:
     'MultiExpIntegration.R'
     'DimReduction.R'
     'Imputation.R'
+    'Overlap.R'
     'Pathway_Analysis.R'
     'PlotFunctions.R'
     'gsva_scoring.R'
