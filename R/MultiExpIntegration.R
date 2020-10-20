@@ -139,7 +139,8 @@ createMultiExp <- function(summ_exp_list, assays_use = NULL, ...) {
   new_summ_exp <- SummarizedExperiment::SummarizedExperiment(assays = list(stacked = new_mat), rowData = row_data, colData = col_data)
   newMultiExp <- new('multiExp',
                      summ_exp = new_summ_exp,
-                     reducedDims = list())
+                     reducedDims = list(),
+                     analyses = list())
   return(newMultiExp)
 }
 

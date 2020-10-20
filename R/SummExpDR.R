@@ -15,7 +15,8 @@
 
 
 setClass('SummExpDR', representation = list('summ_exp' = 'SummarizedExperiment',
-                                            'reducedDims' = 'list'))
+                                            'reducedDims' = 'list',
+                                            'analyses' = 'list'))
 
 # Create Object ---------------------------------------------------------------
 
@@ -50,7 +51,8 @@ create_SummExpDR <- function(summ_exp) {
   summ_exp <- check_rownames_colnames(summ_exp)
   obj <- new('SummExpDR',
              summ_exp = summ_exp,
-             reducedDims = list())
+             reducedDims = list(),
+             analyses = list())
 }
 
 # Getters + Setters -----------------------------------------------------------
@@ -107,6 +109,52 @@ setMethod('setReducedDims',
           'SummExpDR',
           function(x, key, value) {
             x@reducedDims[[key]] <- value
+            return(x)
+          })
+
+#' Getter for analysis keys
+#'
+
+setGeneric('getAnalyses_keys', function(x) standardGeneric('getAnalyses_keys'))
+
+setMethod('getAnalyses_keys',
+          'SummExpDR',
+          function(x) {
+            return(names(x@analyses))
+          })
+
+#' Getter for analyses slot
+#'
+
+setGeneric('getAnalyses', function(x, key) standardGeneric('getAnalyses'))
+
+setMethod('getAnalyses',
+          'SummExpDR',
+          function(x, key = NULL) {
+            if (!(is.character(key) && length(key) == 1)) {
+              stop('key must be character of length 1')
+            } else {
+              valid_keys <- getAnalyses_keys(x)
+              if (!key %in% valid_keys) {
+                stop(paste('provided key not in keys', paste(valid_keys, collapse = ',')))
+              }
+              return(x@analyses[[key]])
+            }
+          })
+
+#' Setter for Analyses slot
+#' @param x SummExpDR
+#' @param key character vector of length 1
+#' @param value
+#' @value SummExpDR modified to have value for given key in analyses slot
+#' @export
+
+setGeneric('setAnalyses', function(x, key, value) standardGeneric('setAnalyses'))
+
+setMethod('setAnalyses',
+          'SummExpDR',
+          function(x, key, value) {
+            x@analyses[[key]] <- value
             return(x)
           })
 

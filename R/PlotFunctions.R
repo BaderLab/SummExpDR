@@ -366,3 +366,95 @@ setMethod('plotVarianceExplained',
             }
           })
 
+###############################################################################
+## Iterative Clustering Related Functions
+
+#' plot distributions of pairwise ARI
+#'
+#' @param object
+#' @param clust_analysis clustering analysis to select out of
+#' clust.results slot. Can be an integer indicating position
+#' in list, or alternatively the name assigned to said analysis
+#' @param mode if resample.vs.perm (default, only option), plots distributions
+#' of pairwise ARI for resampled clustering solutions vs permuted
+#' labels. if full.vs.rs, pairwise ARI from best solution at each k
+#' to the resampled clustering solutions (this is to assess if
+#' chosen solution is basically the same as solutions found via resampling).
+#' @param file filepath
+#' @param save_file save file? if TRUE, save file. if FALSE, a boxplot is produced and sent
+#' to the default device for plots
+#'
+#' @return NULL
+#' @export
+#'
+#' @examples
+plot_sim_dist <- function(object, clust_analysis = 1,
+                          mode = 'resample.vs.perm',
+                          file = 'pairwise_ARI.png',
+                          save_file = F) {
+  if (is(object, 'SummExpDR')) {
+    analyses_keys <- getAnalyses_keys(object)
+    analysis_use <- analyses_keys[analysis_use]
+    selected.analysis <- getAnalyses(object, key = analysis_use)
+    if (!is(selected.analysis, 'multi_k_clust')) {
+      stop(paste('selected clustering analysis in input object must be of class multi_clust_k'))
+    }
+    plot_sim_dist(object = selected.analysis,
+                  mode = mode,
+                  file = file,
+                  save_file = save_file)
+  } else if (is(object, 'multi_k_clust')) {
+    if (mode == 'resample.vs.perm') {
+      resample.ARI.dists <- list()
+      perm.ARI.dists <- list()
+      for (k in names(object@single.k.analyses)) {
+        analysis.k <- object@single.k.analyses[[k]]
+        resample.ARI.dists[[k]] <- get_sim_dist(analysis.k@sim.mat.rs)
+        perm.ARI.dists[[k]] <- get_sim_dist(analysis.k@sim.mat.rs.perm)
+      }
+      names(resample.ARI.dists) <- paste0('rs.', names(resample.ARI.dists))
+      names(perm.ARI.dists) <- paste0('perm.', names(perm.ARI.dists))
+      combined.list <- c(resample.ARI.dists,
+                         perm.ARI.dists)
+      if (save_file) {
+        if (!grepl('[.]png$', file)) {
+          stop('specify file as .png file')
+        }
+        png(filename = file)
+      }
+      boxplot(combined.list, main = 'Pairwise ARI vs k, resampled + permuted',
+              ylab = 'ARI')
+      if (save_file) {
+        dev.off()
+      }
+    } else if (mode == 'full.vs.rs') {
+      pairwise.ARI <- list()
+      for (k in names(object@single.k.analyses)) {
+        analysis.k <- object@single.k.analyses[[k]]
+        ## pick solution specified in soln.metadata
+        soln.metadata <- get_soln_metadata(analysis.k)
+        soln.use <- which(soln.metadata$soln.report == T)
+        compar.mat <- analysis.k@compar.mat.full.rs
+        pairwise.ARI[[k]] <- compar.mat[soln.use,]
+      }
+      names(pairwise.ARI) <- paste0('full.vs.rs.k.', names(pairwise.ARI))
+      if (save_file) {
+        if (!grepl('[.]png$', file)) {
+          stop('specify file as .png file')
+        }
+        png(filename = file)
+      }
+      boxplot(pairwise.ARI, main = 'Pairwise ARI vs k, full solution vs resampled',
+              ylab = 'ARI')
+      if (save_file) {
+        dev.off()
+      }
+    } else {
+      stop('invalid \'mode\' argument')
+    }
+  } else {
+    stop(paste('invalid input for \'object\' argument'))
+  }
+  return(NULL)
+}
+
