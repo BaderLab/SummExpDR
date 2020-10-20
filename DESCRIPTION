@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.031
+Version: 0.1.032
 Author: Owen Whitley
 Maintainer: The package maintainer <owen.whitley@mail.utoronto.ca>
 Description: More about what it does (maybe more than one line)
@@ -13,6 +13,8 @@ Suggests:
   testthat
 Imports:
   BiocParallel,
+  curl,
+  DESeq2,
   dplyr,
   GenomicFeatures,
   ggplot2,
@@ -20,6 +22,7 @@ Imports:
   GSVA,
   IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
   kernlab,
+  limma,
   Matrix,
   matrixStats,
   methods,
@@ -37,6 +40,7 @@ Collate:
     'Correlation.R'
     'DNAm_anno.R'
     'DNAm_utils.R'
+    'DifferentialExpression.R'
     'SummExpDR.R'
     'MultiExpIntegration.R'
     'DimReduction.R'
