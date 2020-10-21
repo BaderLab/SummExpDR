@@ -4,13 +4,13 @@
 \alias{detect_outliers}
 \title{Detect outliers}
 \usage{
-detect_outliers(object, assay.use = 1)
+detect_outliers(object, assay_use = 1)
 }
 \arguments{
 \item{object}{SummExpDR class object, SummarizedExperiment, or mxn numeric
 data matrix.}
 
-\item{assay.use}{which assay to use for outlier detection}
+\item{assay_use}{which assay to use for outlier detection}
 }
 \value{
 if a SummExpDR, a SummExpDR with metadata updated

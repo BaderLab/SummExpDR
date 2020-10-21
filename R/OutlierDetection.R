@@ -5,7 +5,7 @@
 #'
 #' @param object SummExpDR class object, SummarizedExperiment, or mxn numeric
 #' data matrix.
-#' @param assay.use which assay to use for outlier detection
+#' @param assay_use which assay to use for outlier detection
 #' @return if a SummExpDR, a SummExpDR with metadata updated
 #' with an outliers column. if a SummarizedExperiment, a SummarizedExperiment
 #' with colData updated with an outliers column. if mxn matrix, a logical
@@ -13,19 +13,19 @@
 #' @export
 #'
 #' @examples
-detect_outliers <- function(object, assay.use = 1) {
+detect_outliers <- function(object, assay_use = 1) {
   if (is(object, 'matrix') && is.numeric(object)) {
     outlier.result <- rrcovHD::OutlierPCDist(object)
     outlier.status <- logical(nrow(object))
     outlier.status[rrcovHD::getOutliers(outlier.result)] <- TRUE
     return(outlier.status)
   } else if (is(object, 'SummarizedExperiment')) {
-    data.use <- t(SummarizedExperiment::assay(object, assay.use))
+    data.use <- t(SummarizedExperiment::assay(object, assay_use))
     outlier.status <- detect_outliers(data.use)
     object$is.outlier <- outlier.status
     return(object)
   } else if (is(object, 'SummExpDR')) {
-    object@summ_exp <- detect_outliers(getSummExp(object), assay.use = assay.use)
+    object@summ_exp <- detect_outliers(getSummExp(object), assay_use = assay_use)
     return(object)
   } else {
     stop(paste('unrecognized object argument of class', class(object)))
