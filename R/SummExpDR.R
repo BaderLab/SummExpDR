@@ -113,7 +113,9 @@ setMethod('setReducedDims',
           })
 
 #' Getter for analysis keys
-#'
+#' @param x SummExpDR object
+#' @value character vector of all keys for analyses slot
+#' @export
 
 setGeneric('getAnalyses_keys', function(x) standardGeneric('getAnalyses_keys'))
 
@@ -124,7 +126,10 @@ setMethod('getAnalyses_keys',
           })
 
 #' Getter for analyses slot
-#'
+#' @param x SummExpDR object
+#' @param key name of analysis to retrieve
+#' @value value of retrieved analysis
+#' @export
 
 setGeneric('getAnalyses', function(x, key) standardGeneric('getAnalyses'))
 

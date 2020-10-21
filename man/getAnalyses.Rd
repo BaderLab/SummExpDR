@@ -6,6 +6,11 @@
 \usage{
 getAnalyses(x, key)
 }
+\arguments{
+\item{x}{SummExpDR object}
+
+\item{key}{name of analysis to retrieve}
+}
 \description{
 Getter for analyses slot
 }

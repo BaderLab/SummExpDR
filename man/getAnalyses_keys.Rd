@@ -6,6 +6,9 @@
 \usage{
 getAnalyses_keys(x)
 }
+\arguments{
+\item{x}{SummExpDR object}
+}
 \description{
 Getter for analysis keys
 }
