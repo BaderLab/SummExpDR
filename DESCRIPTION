@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.032
+Version: 0.1.033
 Author: Owen Whitley
 Maintainer: The package maintainer <owen.whitley@mail.utoronto.ca>
 Description: More about what it does (maybe more than one line)
@@ -29,6 +29,7 @@ Imports:
   parallel,
   reshape2,
   reticulate,
+  rrcovHD,
   scales,
   SNFtool,
   stats,
@@ -46,6 +47,7 @@ Collate:
     'DimReduction.R'
     'Imputation.R'
     'IterativeClustering.R'
+    'OutlierDetection.R'
     'Overlap.R'
     'Pathway_Analysis.R'
     'PlotFunctions.R'
