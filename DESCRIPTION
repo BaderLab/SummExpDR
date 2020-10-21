@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.033
+Version: 0.1.034
 Author: Owen Whitley
 Maintainer: The package maintainer <owen.whitley@mail.utoronto.ca>
 Description: More about what it does (maybe more than one line)
@@ -25,6 +25,7 @@ Imports:
   limma,
   Matrix,
   matrixStats,
+  mclust,
   methods,
   parallel,
   reshape2,
