@@ -8,7 +8,7 @@ run_multi_k_functions(
   x,
   assay_use = 1,
   analysis_name = "clust.analysis",
-  redDimKey = F,
+  redDimKey = NULL,
   dims_use = NULL,
   std_norm = NULL,
   k_use = 2:10,

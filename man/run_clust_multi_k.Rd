@@ -55,7 +55,7 @@ the same)}
 \item{...}{other args for iter_clust}
 }
 \value{
-multi_k_clust object with single.k.analysis slot assigned
+multi_k_clust object with single_k_analyses slot assigned
 as a list of iter_clust_obj objects for which clustering and
 evaluation of full data and resampled solutions has been done.
 Each element of the list is named according to the value k that

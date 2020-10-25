@@ -309,7 +309,7 @@ setMethod('plotCorrelation',
           signature = 'SummExpDR',
           function(x, feat1, feat2, color_by = NULL, shape_by = NULL, label = NULL, key = NULL, assay = NULL, ...) {
             feats_fetch <- c(feat1, feat2, color_by, shape_by, label)
-            fetched_data <- fetchData(x, feats_fetch, key, assay, mode = 'sample_wise')
+            fetched_data <- fetchData(x, feats_fetch, redDimKeys = key, assayKey = assay, mode = 'sample_wise')
             p <- corplot_2_var(fetched_data, feat1, feat2, color_by = color_by, shape_by = shape_by, label = label, ...)
             return(p)
           })
@@ -393,8 +393,13 @@ plot_sim_dist <- function(object, clust_analysis = 1,
                           file = 'pairwise_ARI.png',
                           save_file = F) {
   if (is(object, 'SummExpDR')) {
-    analyses_keys <- getAnalyses_keys(object)
-    analysis_use <- analyses_keys[analysis_use]
+    if (is.integer(clust_analysis)) {
+      analyses_keys <- getAnalyses_keys(object)
+      analysis_use <- analyses_keys[clust_analysis]
+      message(paste('using analysis', analysis_use))
+    } else {
+      analysis_use <- clust_analysis
+    }
     selected.analysis <- getAnalyses(object, key = analysis_use)
     if (!is(selected.analysis, 'multi_k_clust')) {
       stop(paste('selected clustering analysis in input object must be of class multi_clust_k'))
@@ -407,10 +412,10 @@ plot_sim_dist <- function(object, clust_analysis = 1,
     if (mode == 'resample.vs.perm') {
       resample.ARI.dists <- list()
       perm.ARI.dists <- list()
-      for (k in names(object@single.k.analyses)) {
-        analysis.k <- object@single.k.analyses[[k]]
-        resample.ARI.dists[[k]] <- get_sim_dist(analysis.k@sim.mat.rs)
-        perm.ARI.dists[[k]] <- get_sim_dist(analysis.k@sim.mat.rs.perm)
+      for (k in names(object@single_k_analyses)) {
+        analysis.k <- object@single_k_analyses[[k]]
+        resample.ARI.dists[[k]] <- get_sim_dist(analysis.k@sim_mat_rs)
+        perm.ARI.dists[[k]] <- get_sim_dist(analysis.k@sim_mat_rs_perm)
       }
       names(resample.ARI.dists) <- paste0('rs.', names(resample.ARI.dists))
       names(perm.ARI.dists) <- paste0('perm.', names(perm.ARI.dists))
@@ -429,12 +434,12 @@ plot_sim_dist <- function(object, clust_analysis = 1,
       }
     } else if (mode == 'full.vs.rs') {
       pairwise.ARI <- list()
-      for (k in names(object@single.k.analyses)) {
-        analysis.k <- object@single.k.analyses[[k]]
+      for (k in names(object@single_k_analyses)) {
+        analysis.k <- object@single_k_analyses[[k]]
         ## pick solution specified in soln.metadata
         soln.metadata <- get_soln_metadata(analysis.k)
-        soln.use <- which(soln.metadata$soln.report == T)
-        compar.mat <- analysis.k@compar.mat.full.rs
+        soln.use <- which(soln.metadata$soln_report == T)
+        compar.mat <- analysis.k@compar_mat_full_rs
         pairwise.ARI[[k]] <- compar.mat[soln.use,]
       }
       names(pairwise.ARI) <- paste0('full.vs.rs.k.', names(pairwise.ARI))

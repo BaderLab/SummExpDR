@@ -346,7 +346,7 @@ run_limma <- function(expt_data,
 #' @param class_type_use
 #' @param class1
 #' @param class2
-#' @param n.cores number of cores to use for DESeq2 differential expression
+#' @param n_cores number of cores to use for DESeq2 differential expression
 #' @param assay_use which assay to use from expt_data. should indicate counts
 #' @param covariates
 #' @param remove_low_cts remove low counts? If this is the case, remove all genes
@@ -363,7 +363,7 @@ run_DESEQ2 <- function(expt_data,
                        class_type_use,
                        class1,
                        class2 = NULL,
-                       n.cores = 1,
+                       n_cores = 1,
                        assay_use = 1,
                        covariates = character(0),
                        remove_low_cts = F,
@@ -372,15 +372,15 @@ run_DESEQ2 <- function(expt_data,
     stop('expect expt_data to be SummarizedExperiment')
   }
 
-  if (n.cores == 0) {
-    n.cores <- parallel::detectCores()
+  if (n_cores == 0) {
+    n_cores <- parallel::detectCores()
   }
-  if (n.cores == 1) {
+  if (n_cores == 1) {
     use.parallel <- F
-  } else if (n.cores > 1) {
+  } else if (n_cores > 1) {
     use.parallel <- T
   } else {
-    stop('n.cores should be >= 1 or specified as 0 for automatic detection')
+    stop('n_cores should be >= 1 or specified as 0 for automatic detection')
   }
   if (remove_low_cts) {
     ## by default assumed that low counts have been removed previously,
@@ -428,7 +428,7 @@ run_DESEQ2 <- function(expt_data,
   }
   dds <- DESeq2::DESeqDataSet(se = expt_data, design = formula(formula.string))
   dds <- DESeq2::estimateSizeFactors(dds)
-  dds <- DESeq2::DESeq(dds, parallel = use.parallel, BPPARAM = BiocParallel::MulticoreParam(n.cores, exportglobals = FALSE))
+  dds <- DESeq2::DESeq(dds, parallel = use.parallel, BPPARAM = BiocParallel::MulticoreParam(n_cores, exportglobals = FALSE))
   DESEQ2.result <- DESeq2::results(dds,
                                    contrast = c(class_type_use, class1, class2),
                                    altHypothesis = 'greaterAbs',

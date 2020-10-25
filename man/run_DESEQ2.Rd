@@ -9,7 +9,7 @@ run_DESEQ2(
   class_type_use,
   class1,
   class2 = NULL,
-  n.cores = 1,
+  n_cores = 1,
   assay_use = 1,
   covariates = character(0),
   remove_low_cts = F,
@@ -26,7 +26,7 @@ run_DESEQ2(
 \item{class2}{will be 'denominator' for log fold change. if set to NULL,
 defined as the complement of class1 (i.e. all other classes), and called 'all.others'}
 
-\item{n.cores}{number of cores to use for DESeq2 differential expression}
+\item{n_cores}{number of cores to use for DESeq2 differential expression}
 
 \item{assay_use}{which assay to use from expt_data. should indicate counts}
 

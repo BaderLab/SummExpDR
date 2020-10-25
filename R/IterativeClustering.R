@@ -438,7 +438,8 @@ do_clust <- function(object,
                             pct_resample = pct_resample,
                             affi_K = affi_K,
                             sigma = sigma,
-                            base_seed = base_seed)
+                            base_seed = base_seed,
+                            ...)
   clusts_rs <- iter_clust(x = inp_data,
                           k = k,
                           num_iter = num_iter,
@@ -1022,7 +1023,7 @@ create_multi_k_clust <- function() {
 #' @param object multi_k_clust object
 #' @param k_use integer vector, length >= 1. values k to perform
 #' clustering for
-#' @return multi_k_clust object with single.k.analysis slot assigned
+#' @return multi_k_clust object with single_k_analyses slot assigned
 #' as a list of iter_clust_obj objects for which clustering and
 #' evaluation of full data and resampled solutions has been done.
 #' Each element of the list is named according to the value k that
@@ -1097,7 +1098,7 @@ run_clust_multi_k <- function(object,
 run_multi_k_functions  <- function(x,
                                    assay_use = 1,
                                    analysis_name = 'clust.analysis',
-                                   redDimKey = F,
+                                   redDimKey = NULL,
                                    dims_use = NULL,
                                    std_norm = NULL,
                                    k_use = 2:10,
@@ -1292,6 +1293,7 @@ get_soln_k <- function(object,
           && length(analysis_use) == 1) {
         analyses_keys <- getAnalyses_keys(object)
         analysis_use <- analyses_keys[analysis_use]
+        message(paste('using analysis', analysis_use))
       } else if (! (is.character(analysis_use) && (length(analysis_use) == 1)) ) {
         stop('expect analysis_use argument to be either a character of length 1
              or integer lf length 1')
