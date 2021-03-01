@@ -11,6 +11,7 @@ correlateFeatures(
   prune_x = NULL,
   prune_y = NULL,
   assayKey = NULL,
+  redDimKeys = NULL,
   ...
 )
 }
@@ -28,6 +29,8 @@ use when different data modalities have measurements for same gene and you want 
 use when different data modalities have measurements for same gene}
 
 \item{assayKey}{assay to pull if using assay data}
+
+\item{redDimKeys}{reduced dim keys}
 
 \item{...}{other args to get_cor_vals}
 }

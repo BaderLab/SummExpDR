@@ -71,18 +71,19 @@ get_cor_vals <- function(X, Y, fdr_filter = 0.10, n_cores = 1, self_only = FALSE
 #' @param prune_y regex to remove from values in features_y.
 #' use when different data modalities have measurements for same gene
 #' @param assayKey assay to pull if using assay data
+#' @param redDimKeys reduced dim keys
 #' @param ... other args to get_cor_vals
 #' @value data.frane with feature pairs and correlation values
 #' @export
 
 setGeneric('correlateFeatures',
-           function(x, features_x, features_y, prune_x = NULL, prune_y = NULL, assayKey = NULL, ...) standardGeneric('correlateFeatures'))
+           function(x, features_x, features_y, prune_x = NULL, prune_y = NULL, assayKey = NULL, redDimKeys = NULL, ...) standardGeneric('correlateFeatures'))
 
 setMethod('correlateFeatures',
           signature = 'SummExpDR',
-          function(x, features_x, features_y, prune_x = NULL, prune_y = NULL, assayKey = NULL, ...) {
-            red_dim_keys <- getReducedDims_keys(x)
-            data_fetched <- fetchData(x, c(features_x, features_y), red_dim_keys, assayKey)
+          function(x, features_x, features_y, prune_x = NULL, prune_y = NULL, assayKey = NULL, redDimKeys = NULL, ...) {
+
+            data_fetched <- fetchData(x, c(features_x, features_y), redDimKeys = redDimKeys, assayKey = assayKey)
             data_x <- as.matrix(data_fetched[,features_x, drop = FALSE])
             data_y <- as.matrix(data_fetched[,features_y, drop = FALSE])
             if (!is.null(prune_x)) {
