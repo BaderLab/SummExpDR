@@ -239,7 +239,7 @@ test_that('run_DESEQ2 produces expected output with and without covariates', {
                             assay_use = 1,
                             covariates = character(0),
                             remove_low_cts = F,
-                            n.cores = 1)
+                            n_cores = 1)
 
   expect_identical(test.no.cov, ref.no.cov)
 
@@ -257,7 +257,7 @@ test_that('run_DESEQ2 produces expected output with and without covariates', {
                          assay_use = 1,
                          covariates = c('Age', 'Sex'),
                          remove_low_cts = F,
-                         n.cores = 1)
+                         n_cores = 1)
 
   expect_identical(test.cov, ref.cov)
   expect_false(identical(test.cov, test.no.cov))
@@ -283,7 +283,7 @@ test_that('run_DESEQ2 handles class2 arguments correctly', {
                           assay_use = 1,
                           covariates = 'Age',
                           remove_low_cts = F,
-                          n.cores = 1)
+                          n_cores = 1)
 
   expect_identical(test.null, ref.null)
 
@@ -301,7 +301,7 @@ test_that('run_DESEQ2 handles class2 arguments correctly', {
                             assay_use = 1,
                             covariates = 'Age',
                             remove_low_cts = F,
-                            n.cores = 1)
+                            n_cores = 1)
 
   expect_identical(test.class2, ref.class2)
   expect_false(identical(test.class2, test.null))

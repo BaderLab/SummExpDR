@@ -176,14 +176,16 @@ setMethod('getScaleFactors',
 #' Impute Missing Data in multiExp object
 #' @param x multiExp object
 #' @param assay assay for which data is to be imputed. by default it's stacked, the assay name for all of the input data stacked together
+#' @param use_num_feats scale data in imputation space 1/(sd(feat)*sqrt(n_feats in datatype)), where feat is value of a feature, n_feats is
+#' number of features in said datatype
 #' @param ... other args for sklearn.impute.KNNImputer
 #' @export
 
-setGeneric('imputeExpData',  function(x, assay = 'stacked', ...) standardGeneric("imputeExpData"))
+setGeneric('imputeExpData',  function(x, assay = 'stacked', use_num_feats = TRUE, ...) standardGeneric("imputeExpData"))
 
 setMethod('imputeExpData',
           signature = 'multiExp',
-          function(x, assay = 'stacked', ...) {
+          function(x, assay = 'stacked', use_num_feats = TRUE, ...) {
             summ_expt <- getSummExp(x)
             data_mat <- SummarizedExperiment::assay(summ_expt, assay)
             na_inds <- which(is.na(data_mat))
@@ -193,7 +195,7 @@ setMethod('imputeExpData',
             if (length(na_inds) > 0) {
               print(paste('running imputation for', length(na_inds), 'of', length(data_mat), 'values'))
               is_imputed[na_inds] <- 1L
-              scale_factors <- getScaleFactors(x, assay)
+              scale_factors <- getScaleFactors(x, assay, use_num_feats)
               imputed_mat <- KNN_scale_impute(data_mat, scale_factors, ...)
               SummarizedExperiment::assay(summ_expt, 'imputed_mat') <- imputed_mat
             } else {

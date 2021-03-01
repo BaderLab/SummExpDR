@@ -4,12 +4,15 @@
 \alias{imputeExpData}
 \title{Impute Missing Data in multiExp object}
 \usage{
-imputeExpData(x, assay = "stacked", ...)
+imputeExpData(x, assay = "stacked", use_num_feats = TRUE, ...)
 }
 \arguments{
 \item{x}{multiExp object}
 
 \item{assay}{assay for which data is to be imputed. by default it's stacked, the assay name for all of the input data stacked together}
+
+\item{use_num_feats}{scale data in imputation space 1/(sd(feat)*sqrt(n_feats in datatype)), where feat is value of a feature, n_feats is
+number of features in said datatype}
 
 \item{...}{other args for sklearn.impute.KNNImputer}
 }
