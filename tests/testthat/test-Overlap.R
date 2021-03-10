@@ -17,6 +17,66 @@ test_that('fisher_test_sets produces sane output', {
 
 })
 
+test_that('do_fisher_multi produces expected output', {
+  abc <- letters[1:3]
+  bcd <- letters[2:4]
+  def <- letters[4:6]
+  abcd <- letters[1:4]
+  efgh <- letters[5:8]
+  hijk <- letters[8:11]
+  xyza <- c('x', 'y', 'z', 'a')
+  test.list1.orig <- list(abc = abc, bcd = bcd, def = def,
+                          abcd = abcd, efgh = efgh, hijk = hijk, xyza = xyza)
+
+  query.orig <- c('r', 'q', 'a', 'd', 'c')
+
+  for (rnd_seed in 42:44) {
+    set.seed(rnd_seed)
+    test.list1 <- test.list1.orig[sample(1:length(test.list1.orig), length(test.list1.orig), replace = FALSE)]
+    query <- query.orig[sample(1:length(query.orig), length(query.orig), replace = FALSE)]
+    fisher_multi_result <- do_fisher_multi(query, test.list1, master_set = letters, FDR = 1.0, n_cores = 1)
+    # check that FDR correction done properly
+    expect_equal(fisher_multi_result$FDR, p.adjust(fisher_multi_result$p_val, method = 'BH'))
+    # check that p-values and intersection calculated correctly
+    for (pathway_name in names(test.list1)) {
+      fisher_result <- fisher_test_sets(query, test.list1[[pathway_name]], master_set = letters)
+      fisher_multi_row <- fisher_multi_result[fisher_multi_result$pathway_name == pathway_name,]
+      # check p-value calculated correctly
+      expect_equal(fisher_multi_row$p_val, fisher_result$p.value)
+      # check intersection made correctly
+      expect_equal(sort(unlist(strsplit(fisher_multi_row$intersect, split = ';'))), sort(intersect(query, test.list1[[pathway_name]])))
+      # check that pathway contents stored
+      expect_equal(unlist(strsplit(fisher_multi_row$pathway, split = ';')), test.list1[[pathway_name]])
+    }
+  }
+})
+
+test_that('do_fisher_multi produces expected output in parallel case', {
+  abc <- letters[1:3]
+  bcd <- letters[2:4]
+  def <- letters[4:6]
+  abcd <- letters[1:4]
+  efgh <- letters[5:8]
+  hijk <- letters[8:11]
+  xyza <- c('x', 'y', 'z', 'a')
+  test.list1.orig <- list(abc = abc, bcd = bcd, def = def,
+                          abcd = abcd, efgh = efgh, hijk = hijk, xyza = xyza)
+
+  query.orig <- c('r', 'q', 'a', 'd', 'c')
+
+  for (rnd_seed in 42:44) {
+    set.seed(rnd_seed)
+    test.list1 <- test.list1.orig[sample(1:length(test.list1.orig), length(test.list1.orig), replace = FALSE)]
+    query <- query.orig[sample(1:length(query.orig), length(query.orig), replace = FALSE)]
+    fisher_multi_result <- do_fisher_multi(query, test.list1, master_set = letters, FDR = 1.0, n_cores = 1)
+    # check that p-values and intersection calculated correctly
+    for (n_cores in 2:3) {
+      fisher_multi_result_parallel <- do_fisher_multi(query, test.list1, master_set = letters, FDR = 1.0, n_cores = n_cores)
+      expect_identical(fisher_multi_result, fisher_multi_result_parallel)
+    }
+  }
+})
+
 test_that('calc_overlap produces expected output', {
   abc <- letters[1:3]
   bcd <- letters[2:4]
