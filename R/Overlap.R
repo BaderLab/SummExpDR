@@ -114,8 +114,8 @@ calc_overlap <- function(list1, list2 = NULL, metric = 'num.ovr', master_set = N
   }
 
   # loop over lists
-  loop_df <- data.frame(tidyr::crossing(data.frame(i = names(list1), stringsAsFactors = FALSE),
-                                        data.frame(j = names(list2), stringsAsFactors = FALSE)),
+  loop_df <- data.frame(tidyr::crossing(data.frame(i = 1:length(list1), stringsAsFactors = FALSE),
+                                        data.frame(j = 1:length(list2), stringsAsFactors = FALSE)),
                         stringsAsFactors = FALSE)
   if (n_cores ==  1) {
     bpparam <- BiocParallel::SerialParam(progressbar = pbar)

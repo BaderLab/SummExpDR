@@ -22,72 +22,80 @@ test_that('calc_overlap produces expected output', {
   bcd <- letters[2:4]
   def <- letters[4:6]
 
-  test.list1 <- list(abc = abc, bcd = bcd, def = def)
+  test.list1.orig <- list(abc = abc, bcd = bcd, def = def)
 
   abcd <- letters[1:4]
   efgh <- letters[5:8]
   hijk <- letters[8:11]
   xyza <- c('x', 'y', 'z', 'a')
 
-  test.list2 <- list(abcd = abcd, efgh = efgh, hijk = hijk, xyza = xyza)
-  for (metric in c('num.ovr', 'jaccard', 'ovr.coef', 'fisher.p')) {
-    if (metric == 'fisher.p') {
-      master_set <- letters
-    } else {
-      master_set <- NULL
-    }
-    M1 <- calc_overlap(list1 = test.list1,
-                       list2 = NULL,
-                       metric = metric,
-                       n_cores = 1,
-                       master_set = master_set)
-    M2 <- calc_overlap(list1 = test.list1,
-                       list2 = test.list2,
-                       metric = metric,
-                       n_cores = 1,
-                       master_set = master_set)
-    ## ref.1a = abc x bcd
-    ## ref.1b = bcd x def
-    ## ref.2a = abc x abcd
-    ## ref.2b = def x efgh
-    if (metric == 'num.ovr') {
-      ref.1a <- 2
-      ref.1b <- 1
-      ref.2a <- 3
-      ref.2b <- 2
-    } else if (metric == 'jaccard') {
-      ref.1a <- 1/2
-      ref.1b <- 1/5
-      ref.2a <- 3/4
-      ref.2b <- 2/5
-    } else if (metric == 'ovr.coef') {
-      ref.1a <- 2/3
-      ref.1b <- 1/3
-      ref.2a <- 1
-      ref.2b <- 2/3
-    } else if (metric == 'fisher.p') {
-      ref.1a <- -log10(fisher_test_sets(set1 = abc,
-                                        set2 = bcd,
-                                        master_set = letters)$p.value)
-      ref.1b <- -log10(fisher_test_sets(set1 = bcd,
-                                        set2 = def,
-                                        master_set = letters)$p.value)
-      ref.2a <- -log10(fisher_test_sets(set1 = abc,
-                                        set2 = abcd,
-                                        master_set = letters)$p.value)
-      ref.2b <- -log10(fisher_test_sets(set1 = def,
-                                        set2 = efgh,
-                                        master_set = letters)$p.value)
-    }
-    expect_equal(M1['abc','bcd'], ref.1a)
-    expect_equal(M1['bcd', 'def'], ref.1b)
-    expect_equal(M2['abc', 'abcd'], ref.2a)
-    expect_equal(M2['def', 'efgh'], ref.2b)
+  test.list2.orig <- list(abcd = abcd, efgh = efgh, hijk = hijk, xyza = xyza)
+  for (rnd_seed in 42:44) {
+    # previous version of calc_overlap produced incorrect output if list names were not ordered.
+    # permuting lists
+    set.seed(rnd_seed)
+    test.list1 <- test.list1.orig[sample(1:length(test.list1.orig), length(test.list1.orig), replace = FALSE)]
+    test.list2 <- test.list2.orig[sample(1:length(test.list2.orig), length(test.list2.orig), replace = FALSE)]
+    for (metric in c('num.ovr', 'jaccard', 'ovr.coef', 'fisher.p')) {
+      if (metric == 'fisher.p') {
+        master_set <- letters
+      } else {
+        master_set <- NULL
+      }
+      M1 <- calc_overlap(list1 = test.list1,
+                         list2 = NULL,
+                         metric = metric,
+                         n_cores = 1,
+                         master_set = master_set)
+      M2 <- calc_overlap(list1 = test.list1,
+                         list2 = test.list2,
+                         metric = metric,
+                         n_cores = 1,
+                         master_set = master_set)
+      ## ref.1a = abc x bcd
+      ## ref.1b = bcd x def
+      ## ref.2a = abc x abcd
+      ## ref.2b = def x efgh
+      if (metric == 'num.ovr') {
+        ref.1a <- 2
+        ref.1b <- 1
+        ref.2a <- 3
+        ref.2b <- 2
+      } else if (metric == 'jaccard') {
+        ref.1a <- 1/2
+        ref.1b <- 1/5
+        ref.2a <- 3/4
+        ref.2b <- 2/5
+      } else if (metric == 'ovr.coef') {
+        ref.1a <- 2/3
+        ref.1b <- 1/3
+        ref.2a <- 1
+        ref.2b <- 2/3
+      } else if (metric == 'fisher.p') {
+        ref.1a <- -log10(fisher_test_sets(set1 = abc,
+                                          set2 = bcd,
+                                          master_set = letters)$p.value)
+        ref.1b <- -log10(fisher_test_sets(set1 = bcd,
+                                          set2 = def,
+                                          master_set = letters)$p.value)
+        ref.2a <- -log10(fisher_test_sets(set1 = abc,
+                                          set2 = abcd,
+                                          master_set = letters)$p.value)
+        ref.2b <- -log10(fisher_test_sets(set1 = def,
+                                          set2 = efgh,
+                                          master_set = letters)$p.value)
+      }
+      expect_equal(M1['abc','bcd'], ref.1a)
+      expect_equal(M1['bcd', 'def'], ref.1b)
+      expect_equal(M2['abc', 'abcd'], ref.2a)
+      expect_equal(M2['def', 'efgh'], ref.2b)
 
-    ## expect M1 is mxm, expect M2 is mxn
-    expect_equal(dim(M1), c(length(test.list1), length(test.list1)))
-    expect_equal(dim(M2), c(length(test.list1), length(test.list2)))
+      ## expect M1 is mxm, expect M2 is mxn
+      expect_equal(dim(M1), c(length(test.list1), length(test.list1)))
+      expect_equal(dim(M2), c(length(test.list1), length(test.list2)))
+    }
   }
+
 
 })
 
