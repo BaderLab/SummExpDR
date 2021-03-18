@@ -16,6 +16,8 @@ fisher_test_sets <- function(set1, set2, master_set) {
   if (!all(set1 %in% master_set) || !all(set2 %in% master_set)) {
     stop('all members of set1 and set2 must be members of master set')
   }
+  set1 <- unique(set1)
+  set2 <- unique(set2)
   TT <- length(intersect(set1, set2))
   TF <- length(set2) - TT
   FT <- length(set1) - TT
