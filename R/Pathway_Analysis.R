@@ -91,6 +91,27 @@ do_fisher_multi <- function(query, pathway_list, master_set, FDR = 0.10, n_cores
   return(result_df)
 }
 
+#' Convenience function to convert results of do_fisher_multi to a generic EM file
+#' @param df dataframe. should be output by do_fisher_multi
+#' @param fpath filepath
+#' @details See https://enrichmentmap.readthedocs.io/en/docs-3.1/FileFormats.html for details on
+#' enrichment map generic file format.
+#' @return doesn't return anything, just writes Enrichment Map generic formatted file
+#' @export
+
+pathways_to_enrichment_map_fmt <- function(df, fpath) {
+  # writes results of pathway analysis to a gprofiler/generic formatted file for enrichment map
+  # df = data.frame with results
+  # fpath = file path
+  pathway_name <- df$pathway_name
+  split_str <- strsplit(pathway_name, split = '%')
+  pathway_description <- unlist(lapply(split_str, FUN = function(x) {return(x[1])}))
+  p_val = df$p_val
+  FDR <- df$FDR
+  df_save <- data.frame(ID = pathway_name, DESCRIPTION = pathway_description, PVAL = p_val, FDR = FDR)
+  write.table(df_save, file = fpath, row.names = FALSE, quote = FALSE, sep = '\t')
+}
+
 #' Run GseaPreranked from R via system call
 #'
 #' @param gsea_rank_list_path  character, length 1. path to ranked list file
@@ -246,3 +267,6 @@ retrieve_gsea <- function(gsea_results_dir) {
   GSEA_result <- list(na_pos_report = na_pos_report, na_neg_report = na_neg_report)
   return(GSEA_result)
 }
+
+
+
