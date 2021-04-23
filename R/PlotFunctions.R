@@ -485,6 +485,7 @@ do_comparisons <- function(df, x, y, reference = NULL, test_use = 't.test', alte
 #' @param value.name name of metric
 #' @param order.samples order for samples
 #' @return ggplot2 object
+#' @export
 
 hm_w_numbers <- function(ovr.mat, value.name, order.samples) {
   # function to make heatmap with numbers
