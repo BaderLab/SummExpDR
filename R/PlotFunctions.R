@@ -366,6 +366,139 @@ setMethod('plotVarianceExplained',
             }
           })
 
+#' Get all pairwise comparisons for categories in grs_compare
+#' @param grs_compare character vector of groups to compare
+#' @param reference reference to compare against. If NULL, all pairwise comparisons between groups returned
+#' @return list of comparison pairs (list of character vectors of length 2)
+
+get_comparisons <- function(grs_compare, reference = NULL) {
+  # get all pairwise coomparisons for categories in grs_compare
+  comparisons_list <- list()
+  m <- 0
+  for (i in 1:(length(grs_compare))) {
+    if (!is.null(reference)) {
+      if (grs_compare[i] == reference) {
+        next
+      }
+      if (length(which(grs_compare == reference)) > 1) {
+        stop('multiple matches to reference')
+      }
+      m <- m + 1
+      comparisons_list[[m]] <- c(grs_compare[which(grs_compare == reference)], grs_compare[i])
+    } else if (i < length(grs_compare)) {
+      for (j in (i + 1):length(grs_compare)) {
+        m <- m + 1
+        comparisons_list[[m]] <- c(grs_compare[i], grs_compare[j])
+      }
+    }
+  }
+  return(comparisons_list)
+}
+
+#' boxplots with pairwise comparisons for all pairs or all comparisons to reference
+#' @param df data.frame
+#' @param x categorical variable for comparisons
+#' @param y numeric variable (float or int)
+#' @param color variable to color by, or a string
+#' @param reference reference class for all comparisons to compare other classes against
+#' @param test_use character vector of length 1. 't.test' for t.test, 'wilcox' for wilcoxon rank sum test
+#' @param alternative character vector of length 1. 'two.sided' or 'one.sided'
+#' @return ggplot2 object
+#' @export
+
+do_boxplots <- function(df, x, y, color, reference = NULL, test_use = 't.test', alternative = 'two.sided') {
+  # df = data.frame, x = groupings, y = variable of interest, color = color use
+  # boxplots with pairwise comparisons for all pairs or all comparisons to reference
+  df[,x] <- as.character(df[,x])
+  levels_use <- sort(unique(df[,x]))
+  df[,x] <- factor(df[,x], levels = levels_use)
+  comparisons_list <- get_comparisons(levels_use, reference)
+  p <- ggpubr::ggboxplot(df, x = x, y = y, color = color)
+  p <- p + ggpubr::stat_compare_means(method = test_use, method.args = list(alternative = alternative),
+                                      comparisons = comparisons_list)
+  return(p)
+}
+
+#' Calculate effect size (hedge's g)
+#' @inheritParams do_boxplots
+#' @return data.frame of hedge's g values for comparisons
+#' @export
+
+effect_sizes <- function(df, x, y, reference = NULL) {
+  df[,x] <- as.character(df[,x])
+  levels_use <- sort(unique(df[,x]))
+  df[,x] <- factor(df[,x], levels = levels_use)
+  comparisons_list <- get_comparisons(levels_use, reference)
+  out_df <- c()
+  for (i in 1:length(comparisons_list)) {
+    cats_i <- comparisons_list[[i]]
+    cat1<- cats_i[1]
+    cat2 <- cats_i[2]
+    cat1_vals <- df[df[,x] == cat1, y]
+    cat2_vals <- df[df[,x] == cat2, y]
+    effect_size <- effectsize::hedges_g(cat1_vals, cat2_vals)
+    out_df <- rbind(out_df, data.frame(group1 = cat1, group2 = cat2, hedges_g = effect_size))
+  }
+  return(out_df)
+}
+
+#' Pairwise Comparisons for do_boxplots, return as table
+#' @inheritParams do_boxplots
+#' @return data.frame of comparisons
+#' @export
+
+do_comparisons <- function(df, x, y, reference = NULL, test_use = 't.test', alternative = 'two.sided') {
+  # df = dataframe
+  # x = variable to do pairwise comparisons by (categorical variable). does comparisons between each category
+  # y = variable compared in comparisons. must be integer or continuous valued
+  # test_use: wilcox for wilcoxon ranksum test and t.test for t test
+  # alternative = alternative hypothesis. passed to wilcox.test for t.test functions
+  df[,x] <- as.character(df[,x])
+  levels_use <- sort(unique(df[,x]))
+  comparisons_do <- get_comparisons(levels_use, reference)
+  df_out <- c()
+  for (i in 1:length(comparisons_do)) {
+    gr1 <- comparisons_do[[i]][1]
+    gr2 <- comparisons_do[[i]][2]
+    gr1_vals <- df[df[,x] == gr1, y]
+    gr2_vals <- df[df[,x] == gr2, y]
+    if (test_use == 'wilcox') {
+      test_res <- wilcox.test(gr1_vals, gr2_vals, alternative = 'two.sided')
+      test_name <- 'wilcoxon ranksum test'
+    } else if (test_use == 't.test') {
+      test_res <- t.test(gr1_vals, gr2_vals, alternative = 'two.sided')
+      test_name <- 't-test'
+    } else {
+      stop('unrecognized argument for test_use')
+    }
+    df_add <- data.frame(gr1 = gr1, gr2 = gr2,
+                         n_gr1 = length(gr1_vals), n_gr2 = length(gr2_vals),
+                         test = test_name, alternative = alternative, stringsAsFactors = FALSE,
+                         p_val = test_res$p.value)
+    df_out <- rbind(df_out, df_add)
+  }
+  return(df_out)
+}
+
+#' Overlap heatmap with numbers
+#' @param ovr.mat matrix
+#' @param value.name name of metric
+#' @param order.samples order for samples
+#' @return ggplot2 object
+
+hm_w_numbers <- function(ovr.mat, value.name, order.samples) {
+  # function to make heatmap with numbers
+  ovr.mat <- ovr.mat[order.samples, order.samples]
+  mat.melt <- reshape2::melt(ovr.mat, value.name = value.name)
+  p <- ggplot2::ggplot(data = mat.melt, ggplot2::aes_(x=as.name('Var1'), y=as.name('Var2'), fill=as.name(value.name)))
+  p <- p +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 10),
+          axis.text.y = ggplot2::element_text(angle = 0, hjust = 1, size = 10)) +
+    ggplot2::geom_tile() + ggplot2::scale_fill_gradient2(low = 'darkturquoise', mid = 'white', high = 'red') +
+    ggplot2::geom_text(ggplot2::aes_(label = round(mat.melt[,value.name], 2)), size = 3.0)
+  return(p)
+}
+
 ###############################################################################
 ## Iterative Clustering Related Functions
 
@@ -462,4 +595,5 @@ plot_sim_dist <- function(object, clust_analysis = 1,
   }
   return(NULL)
 }
+
 

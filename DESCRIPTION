@@ -1,7 +1,7 @@
 Package: SummExpDR
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.046
+Version: 0.1.047
 Author: Owen Whitley
 Maintainer: The package maintainer <owen.whitley@mail.utoronto.ca>
 Description: More about what it does (maybe more than one line)
@@ -16,8 +16,10 @@ Imports:
   curl,
   DESeq2,
   dplyr,
+  effectsize,
   GenomicFeatures,
   ggplot2,
+  ggpubr,
   ggrepel,
   GSVA,
   IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
