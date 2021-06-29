@@ -349,7 +349,7 @@ replace_col <- function(DF, col_name, value, suffix, remove_existing = FALSE) {
       warning(paste(col_name, 'in column names of DF replaced with new value'))
     } else {
       new_colname <- paste(col_name, suffix, sep = '_')
-      colnames(DF)[grep(paste0('^', col_name, '$'), col_name)] <- new_colname
+      colnames(DF)[grep(paste0('^', col_name, '$'), colnames(DF))] <- new_colname
       warning(paste(col_name, 'in column names of DF renamed to', new_colname))
     }
   }
